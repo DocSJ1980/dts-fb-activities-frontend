@@ -1,8 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DTS - Dengue Tracking System Frontend
+
+A modern Next.js frontend application for the Dengue Tracking System (DTS) that provides surveillance and monitoring capabilities for dengue vector control activities.
+
+## Features
+
+🦟 **Vector Surveillance Dashboard**
+
+- Interactive map visualization of surveillance activities
+- Real-time activity feed with Facebook-like interface
+- Advanced filtering by date, town, and union council (UC)
+- Detailed activity cards with photos and metadata
+
+📊 **Data Visualization**
+
+- Interactive Leaflet maps with custom markers
+- Activity statistics and summaries
+- Responsive design for mobile and desktop
+
+🔍 **Search & Filter**
+
+- Search activities by multiple criteria
+- Sort by date, location, or submitter
+- Filter by town and UC with cascading dropdowns
+
+## Tech Stack
+
+- **Framework**: Next.js 15.3.4 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS v4
+- **Maps**: React Leaflet
+- **HTTP Client**: Axios
+- **Icons**: Heroicons & Emojis
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm, yarn, pnpm, or bun
+- Backend API running on `http://localhost:8000`
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd dts-fb-activities-frontend
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+3. Set up environment variables:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` and configure your API URL:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+```
+
+4. Start the development server:
 
 ```bash
 npm run dev
@@ -10,27 +79,110 @@ npm run dev
 yarn dev
 # or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx           # Landing page
+│   ├── surveillance/      # Surveillance dashboard
+│   ├── layout.tsx         # Root layout
+│   └── globals.css        # Global styles
+├── components/            # React components
+│   ├── ui/               # Reusable UI components
+│   │   ├── Dropdown.tsx  # Custom dropdown
+│   │   └── PostCard.tsx  # Activity card
+│   ├── FilterPanel.tsx   # Filter controls
+│   ├── SurveillanceMap.tsx # Map component
+│   └── SurveillanceFeed.tsx # Activity feed
+├── services/             # API services
+│   └── api.ts           # API client
+├── types/               # TypeScript definitions
+│   └── surveillance.ts  # Data interfaces
+└── utils/               # Utility functions
+    └── constants.ts     # App constants
+```
 
-## Learn More
+## API Integration
 
-To learn more about Next.js, take a look at the following resources:
+The frontend expects the following API endpoints:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `GET /towns` - List all towns
+- `GET /towns/{townCode}/ucs` - List UCs for a town
+- `GET /surveillance-data` - Get surveillance activities with filters
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### API Parameters
 
-## Deploy on Vercel
+**Surveillance Data Endpoint:**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `date` (required): Date in YYYY-MM-DD format
+- `town_code` (optional): Filter by town
+- `uc_code` (optional): Filter by UC
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Features Overview
+
+### Landing Page
+
+- Modern dashboard with feature cards
+- Quick navigation to surveillance activities
+- Statistics overview
+
+### Surveillance Dashboard
+
+- **Filter Panel**: Date, town, and UC selection
+- **Interactive Map**: Leaflet map with activity markers
+- **Activity Feed**: Facebook-style feed with search and sort
+- **Statistics**: Real-time counts and summaries
+
+### Activity Cards
+
+- User avatar with initials
+- Activity details and metadata
+- Photo display with error handling
+- Location coordinates
+- Timestamp and submitter info
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+### Environment Variables
+
+- `NEXT_PUBLIC_API_URL` - Backend API base URL
+- `NODE_ENV` - Environment (development/production)
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Connect your repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on push
+
+### Manual Deployment
+
+```bash
+npm run build
+npm run start
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is part of the Dengue Tracking System for public health surveillance.
