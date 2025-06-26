@@ -34,6 +34,17 @@ export interface ContainerData {
   Positive: number;
 }
 
+export interface User {
+  name: string;
+  fh_name: string;
+  cnic: number;
+  designation: string;
+  contact_no: string;
+  username: string;
+  username_prefix: string;
+  full_name: string;
+}
+
 export interface SurveillanceFilters {
   date: string;
   townCode?: number;
@@ -44,6 +55,7 @@ export interface SurveillanceFilters {
 export interface SurveillanceResponse {
   combined_data: SurveillanceActivity[];
   container_data: ContainerData[];
+  users: User[];
   total_records: number;
 }
 

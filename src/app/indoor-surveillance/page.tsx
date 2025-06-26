@@ -10,12 +10,14 @@ import {
   SurveillanceActivity,
   SurveillanceFilters,
   ContainerData,
+  User,
 } from "@/types/surveillance";
 import { surveillanceApi } from "@/services/api";
 
 export default function IndoorSurveillancePage() {
   const [activities, setActivities] = useState<SurveillanceActivity[]>([]);
   const [containerData, setContainerData] = useState<ContainerData[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filteredActivities, setFilteredActivities] = useState<
@@ -39,6 +41,7 @@ export default function IndoorSurveillancePage() {
       const response = await surveillanceApi.getSurveillanceData(newFilters);
       setActivities(response.combined_data || []);
       setContainerData(response.container_data || []);
+      setUsers(response.users || []);
     } catch (err) {
       setError("Failed to fetch surveillance data. Please try again.");
       console.error("Error fetching surveillance data:", err);
@@ -167,6 +170,7 @@ export default function IndoorSurveillancePage() {
           <div className="mb-6">
             <FieldWorkerCards
               activities={activities}
+              users={users}
               selectedFieldWorker={selectedFieldWorker}
               onFieldWorkerSelect={handleFieldWorkerSelect}
               loading={loading}

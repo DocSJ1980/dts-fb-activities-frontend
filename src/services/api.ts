@@ -58,7 +58,9 @@ export const surveillanceApi = {
       const response = await api.get("/towns");
       return response.data;
     } catch (error: unknown) {
-      const err = error as Error & { response?: { status?: number; data?: unknown } };
+      const err = error as Error & {
+        response?: { status?: number; data?: unknown };
+      };
       console.error("Error fetching towns:", {
         message: err.message,
         status: err.response?.status,
@@ -75,7 +77,9 @@ export const surveillanceApi = {
       const response = await api.get(`/towns/${townCode}/ucs`);
       return response.data;
     } catch (error: unknown) {
-      const err = error as Error & { response?: { status?: number; data?: unknown } };
+      const err = error as Error & {
+        response?: { status?: number; data?: unknown };
+      };
       console.error("Error fetching UCs:", {
         message: err.message,
         status: err.response?.status,
@@ -99,6 +103,7 @@ export const surveillanceApi = {
         return {
           combined_data: [],
           container_data: [],
+          users: [],
           total_records: 0,
         };
       }
@@ -120,7 +125,7 @@ export const surveillanceApi = {
       // Return the full response
       return response.data;
     } catch (error: unknown) {
-      const err = error as Error & { 
+      const err = error as Error & {
         response?: { status?: number; data?: unknown };
         config?: { params?: unknown };
       };
@@ -137,6 +142,7 @@ export const surveillanceApi = {
         return {
           combined_data: [],
           container_data: [],
+          users: [],
           total_records: 0,
         };
       }

@@ -1,9 +1,10 @@
 "use client";
 
-import { SurveillanceActivity } from "@/types/surveillance";
+import { SurveillanceActivity, User } from "@/types/surveillance";
 
 interface FieldWorkerCardsProps {
   activities: SurveillanceActivity[];
+  users: User[];
   selectedFieldWorker?: string;
   onFieldWorkerSelect: (fieldWorker: string | undefined) => void;
   loading?: boolean;
@@ -11,28 +12,24 @@ interface FieldWorkerCardsProps {
 
 export default function FieldWorkerCards({
   activities,
+  users,
   selectedFieldWorker,
   onFieldWorkerSelect,
   loading = false,
 }: FieldWorkerCardsProps) {
-  // Calculate field worker stats
-  const fieldWorkerStats = activities.reduce(
-    (acc: Record<string, number>, activity) => {
-      const worker = activity.Submitted_by?.trim();
-      if (!worker) return acc;
+  // Calculate activity counts for each user
+  const userActivityCounts = users
+    .map((user) => {
+      const activityCount = activities.filter(
+        (activity) => activity.Submitted_by?.trim() === user.username_prefix
+      ).length;
 
-      if (!acc[worker]) {
-        acc[worker] = 0;
-      }
-      acc[worker]++;
-      return acc;
-    },
-    {}
-  );
-
-  const fieldWorkers = Object.entries(fieldWorkerStats).sort(([a], [b]) =>
-    a.localeCompare(b)
-  );
+      return {
+        ...user,
+        activityCount,
+      };
+    })
+    .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
   if (loading) {
     return (
@@ -51,7 +48,7 @@ export default function FieldWorkerCards({
     );
   }
 
-  if (fieldWorkers.length === 0) {
+  if (userActivityCounts.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -77,16 +74,18 @@ export default function FieldWorkerCards({
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {fieldWorkers.map(([worker, count]) => (
+        {userActivityCounts.map((user) => (
           <button
-            key={worker}
+            key={user.username_prefix}
             onClick={() =>
               onFieldWorkerSelect(
-                worker === selectedFieldWorker ? undefined : worker
+                user.username_prefix === selectedFieldWorker
+                  ? undefined
+                  : user.username_prefix
               )
             }
             className={`p-4 rounded-lg border-2 transition-all duration-200 text-left hover:shadow-md ${
-              selectedFieldWorker === worker
+              selectedFieldWorker === user.username_prefix
                 ? "border-blue-500 bg-blue-50 shadow-md"
                 : "border-gray-200 bg-white hover:border-gray-300"
             }`}
@@ -95,31 +94,41 @@ export default function FieldWorkerCards({
               <div className="flex-1 min-w-0">
                 <p
                   className={`text-sm font-medium truncate ${
-                    selectedFieldWorker === worker
+                    selectedFieldWorker === user.username_prefix
                       ? "text-blue-900"
                       : "text-gray-900"
                   }`}
                 >
-                  {worker}
+                  {user.full_name}
                 </p>
                 <p
-                  className={`text-xs mt-1 ${
-                    selectedFieldWorker === worker
+                  className={`text-xs mt-1 truncate ${
+                    selectedFieldWorker === user.username_prefix
                       ? "text-blue-600"
                       : "text-gray-500"
                   }`}
                 >
-                  {count} {count === 1 ? "activity" : "activities"}
+                  @{user.username_prefix}
+                </p>
+                <p
+                  className={`text-xs mt-1 ${
+                    selectedFieldWorker === user.username_prefix
+                      ? "text-blue-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {user.activityCount}{" "}
+                  {user.activityCount === 1 ? "activity" : "activities"}
                 </p>
               </div>
               <div
                 className={`ml-2 w-8 h-8 rounded-full hidden md:flex items-center justify-center text-xs font-bold ${
-                  selectedFieldWorker === worker
+                  selectedFieldWorker === user.username_prefix
                     ? "bg-blue-500 text-white"
                     : "bg-gray-100 text-gray-600"
                 }`}
               >
-                {count}
+                {user.activityCount}
               </div>
             </div>
           </button>
