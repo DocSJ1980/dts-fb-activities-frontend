@@ -1,188 +1,82 @@
-# DTS - Dengue Tracking System Frontend
+# Supervision Dashboard (KoboToolbox) Integration
 
-A modern Next.js frontend application for the Dengue Tracking System (DTS) that provides surveillance and monitoring capabilities for dengue vector control activities.
+This project includes a Supervision Dashboard feature that fetches submissions from a self-hosted KoboToolbox instance and renders:
 
-## Features
+- A list page at `/supervision-dashboard/details` with per-submission cards and quick insights
+- A detail page at `/supervision-dashboard/details/[id]` showing complete submission info and attachments
 
-🦟 **Vector Surveillance Dashboard**
+## Server Route
 
-- Interactive map visualization of surveillance activities
-- Real-time activity feed with Facebook-like interface
-- Advanced filtering by date, town, and union council (UC)
-- Detailed activity cards with photos and metadata
+[`route.ts`](src/app/api/supervision/route.ts) exposes a server-only endpoint at `/api/supervision`. It:
 
-📊 **Data Visualization**
+- Fetches data from KoboToolbox using environment variables
+- Falls back to local [`sample_response.json`](sample_response.json) if the remote request fails or the token is not configured
 
-- Interactive Leaflet maps with custom markers
-- Activity statistics and summaries
-- Responsive design for mobile and desktop
+Security: The Authorization token must only be used on the server. Do not expose it in client-side code.
 
-🔍 **Search & Filter**
+## Environment Variables
 
-- Search activities by multiple criteria
-- Sort by date, location, or submitter
-- Filter by town and UC with cascading dropdowns
+Create a `.env.local` in the project root and add:
 
-## Tech Stack
-
-- **Framework**: Next.js 15.3.4 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **Maps**: React Leaflet
-- **HTTP Client**: Axios
-- **Icons**: Heroicons & Emojis
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm, yarn, pnpm, or bun
-- Backend API running on `http://localhost:8000`
-
-### Installation
-
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd dts-fb-activities-frontend
+```
+KFKOBO_BASE_URL=https://kf.mydomain.com
+KFKOBO_ASSET_ID=my_form_id
+KFKOBO_TOKEN=Token my_kobo_token
+KFKOBO_DJANGO_LANG=en
 ```
 
-2. Install dependencies:
+Notes:
 
-```bash
-npm install
-# or
-yarn install
-# or
+- KFKOBO_TOKEN includes the `Token ` prefix (as provided by KoboToolbox).
+- The app automatically falls back to `sample_response.json` if the token is missing or the API call fails.
+
+Optional:
+
+- `NEXT_PUBLIC_BASE_PATH` if the app is hosted behind a subpath. Otherwise omit it.
+
+## Pages
+
+- List page: [`page.tsx`](src/app/supervision-dashboard/details/page.tsx)
+
+  - Fetches `/api/supervision` using a no-store fetch to avoid caching
+  - Renders each item with a card showing town, UC, visit date/time, team info, area address, health-setting count, and risk flags
+  - Click-through to detail page
+
+- Detail page: [`page.tsx`](src/app/supervision-dashboard/details/[id]/page.tsx)
+  - Fetches all submissions and displays the selected submission by `_id`
+  - Shows General info, Team info, Health Settings 1–5 (location parsing and image), and full attachment list
+
+## Utilities and Types
+
+- Types: [`kobo.ts`](src/types/kobo.ts)
+- Utilities: [`kobo.ts`](src/utils/kobo.ts)
+  - `parseLocation()` parses Kobo location strings like `"33.6352407 73.0899091 469.5 17.992"`
+  - `findAttachmentFor()` maps question XPath to its corresponding attachment
+  - `getSubmissionInsights()` produces values used on cards (hs count, flags, etc.)
+
+## UI Components
+
+- Card component: [`SupervisionCard.tsx`](src/components/supervision/SupervisionCard.tsx)
+- Detail component: [`SupervisionDetail.tsx`](src/components/supervision/SupervisionDetail.tsx)
+
+## Running locally
+
+1. Install deps and start dev server (using pnpm):
+
+```
 pnpm install
-```
-
-3. Set up environment variables:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Edit `.env.local` and configure your API URL:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-```
-
-4. Start the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+2. Configure `.env.local` (see above). If not configured, the UI will render using [`sample_response.json`](sample_response.json) via the server fallback.
 
-## Project Structure
+3. Navigate to:
 
-```
-src/
-├── app/                    # Next.js App Router pages
-│   ├── page.tsx           # Landing page
-│   ├── surveillance/      # Surveillance dashboard
-│   ├── layout.tsx         # Root layout
-│   └── globals.css        # Global styles
-├── components/            # React components
-│   ├── ui/               # Reusable UI components
-│   │   ├── Dropdown.tsx  # Custom dropdown
-│   │   └── PostCard.tsx  # Activity card
-│   ├── FilterPanel.tsx   # Filter controls
-│   ├── SurveillanceMap.tsx # Map component
-│   └── SurveillanceFeed.tsx # Activity feed
-├── services/             # API services
-│   └── api.ts           # API client
-├── types/               # TypeScript definitions
-│   └── surveillance.ts  # Data interfaces
-└── utils/               # Utility functions
-    └── constants.ts     # App constants
-```
+- http://localhost:3000/supervision-dashboard/details
+- Click a submission card to go to its detail page.
 
-## API Integration
+## Implementation Notes
 
-The frontend expects the following API endpoints:
-
-- `GET /towns` - List all towns
-- `GET /towns/{townCode}/ucs` - List UCs for a town
-- `GET /surveillance-data` - Get surveillance activities with filters
-
-### API Parameters
-
-**Surveillance Data Endpoint:**
-
-- `date` (required): Date in YYYY-MM-DD format
-- `town_code` (optional): Filter by town
-- `uc_code` (optional): Filter by UC
-
-## Features Overview
-
-### Landing Page
-
-- Modern dashboard with feature cards
-- Quick navigation to surveillance activities
-- Statistics overview
-
-### Surveillance Dashboard
-
-- **Filter Panel**: Date, town, and UC selection
-- **Interactive Map**: Leaflet map with activity markers
-- **Activity Feed**: Facebook-style feed with search and sort
-- **Statistics**: Real-time counts and summaries
-
-### Activity Cards
-
-- User avatar with initials
-- Activity details and metadata
-- Photo display with error handling
-- Location coordinates
-- Timestamp and submitter info
-
-## Development
-
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-
-### Environment Variables
-
-- `NEXT_PUBLIC_API_URL` - Backend API base URL
-- `NODE_ENV` - Environment (development/production)
-
-## Deployment
-
-### Vercel (Recommended)
-
-1. Connect your repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy automatically on push
-
-### Manual Deployment
-
-```bash
-npm run build
-npm run start
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is part of the Dengue Tracking System for public health surveillance.
+- Server route sets `dynamic = 'force-dynamic'` and uses `cache: 'no-store'` to ensure fresh data.
+- Attachment images are linked using the provided `download_*_url` fields. Thumbnails prefer small/medium sizes.
+- Linting: `any` usage avoided; types use narrow string-indexed fields defined in the Kobo types file.

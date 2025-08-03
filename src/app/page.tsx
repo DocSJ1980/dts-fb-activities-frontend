@@ -12,8 +12,12 @@ export default function HomePage() {
                 <span className="text-white font-bold text-xl">🦟</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">DHA Rawalpindi</h1>
-                <p className="text-sm text-gray-600">District Health Authority Rawalpindi</p>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  DHA Rawalpindi
+                </h1>
+                <p className="text-sm text-gray-600">
+                  District Health Authority Rawalpindi
+                </p>
               </div>
             </div>
           </div>
@@ -67,7 +71,7 @@ export default function HomePage() {
               </div>
             </div>
           </Link>
-    
+
           {/* Outdoor Vector Surveillance Card */}
           <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mb-6">
@@ -77,16 +81,49 @@ export default function HomePage() {
               Outdoor Vector Surveillance
             </h3>
             <p className="text-gray-600 mb-6">
-              Monitor outdoor dengue vector activities with up-to-date data and insights.
+              Monitor outdoor dengue vector activities with up-to-date data and
+              insights.
             </p>
             <div className="flex items-center text-gray-400 font-medium">
               <span>Coming Soon</span>
             </div>
           </div>
-    
+
+          {/* Supervision Dashboard Card */}
+          <Link href="/supervision-dashboard" className="group">
+            <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1">
+              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
+                <span className="text-3xl">👥</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+                Supervision Dashboard
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Monitor supervisory visits and assess team performance quality
+                with detailed analytics and quality indicators.
+              </p>
+              <div className="flex items-center text-green-600 font-medium">
+                <span>View Dashboard</span>
+                <svg
+                  className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </Link>
+
           {/* Analytics Card */}
           <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
+            <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
               <span className="text-3xl">📊</span>
             </div>
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
@@ -103,7 +140,7 @@ export default function HomePage() {
 
           {/* Reports Card */}
           <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+            <div className="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
               <span className="text-3xl">📋</span>
             </div>
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">

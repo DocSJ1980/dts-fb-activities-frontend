@@ -1,26 +1,37 @@
-'use client';
+"use client";
 
-import dynamic from 'next/dynamic';
-import { SurveillanceActivity } from '@/types/surveillance';
+import dynamic from "next/dynamic";
+import { SurveillanceActivity } from "@/types/surveillance";
 
-// Dynamically import the map component with no SSR
-const SurveillanceMap = dynamic(() => import('./SurveillanceMap'), {
-  ssr: false,
-  loading: () => (
+// Create a loading component that accepts title
+const createLoadingComponent = (title: string) => {
+  const LoadingComponent = () => (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-semibold mb-4">Activity Locations</h2>
+      <h2 className="text-xl font-semibold mb-4">{title}</h2>
       <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <span className="ml-3 text-gray-600">Loading map...</span>
       </div>
     </div>
-  ),
-});
+  );
+  LoadingComponent.displayName = `LoadingComponent-${title}`;
+  return LoadingComponent;
+};
 
 interface DynamicSurveillanceMapProps {
   activities: SurveillanceActivity[];
+  title?: string;
 }
 
-export default function DynamicSurveillanceMap({ activities }: DynamicSurveillanceMapProps) {
-  return <SurveillanceMap activities={activities} />;
+export default function DynamicSurveillanceMap({
+  activities,
+  title = "Activity Locations",
+}: DynamicSurveillanceMapProps) {
+  // Create a dynamic component with the specific title for loading state
+  const DynamicMapWithTitle = dynamic(() => import("./SurveillanceMap"), {
+    ssr: false,
+    loading: createLoadingComponent(title),
+  });
+
+  return <DynamicMapWithTitle activities={activities} title={title} />;
 }
