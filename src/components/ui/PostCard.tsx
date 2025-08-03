@@ -182,15 +182,28 @@ export default function PostCard({
       {/* Image */}
       {activity.Picture && !imageError && (
         <div className="px-6 pb-4">
-          <div className="relative">
+          {/* Image wrapper: constrain like a feed photo */}
+          <div
+            className="
+              relative w-full
+              bg-gray-100
+              rounded-lg overflow-hidden shadow-sm
+              /* Mobile: show full image to preserve details like timestamp */
+              aspect-[4/3]
+              /* Desktop: constrain height like a feed photo */
+              md:aspect-auto md:h-[70vh] md:max-h-[70vh]
+              flex items-center justify-center
+            "
+          >
             <Image
               src={activity.Picture}
               alt="Activity"
-              width={1000}
-              height={1000}
-              className="rounded-lg object-contain shadow-sm"
+              fill
               onError={() => setImageError(true)}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              /* Mobile: contain to avoid cropping; Desktop: contain as before */
+              className="object-contain"
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 800px, 900px"
+              priority={false}
             />
           </div>
         </div>

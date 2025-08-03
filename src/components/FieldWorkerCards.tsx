@@ -117,8 +117,7 @@ export default function FieldWorkerCards({
                       : "text-gray-500"
                   }`}
                 >
-                  {user.activityCount}{" "}
-                  {user.activityCount === 1 ? "activity" : "activities"}
+                  {user.designation}
                 </p>
               </div>
               <div

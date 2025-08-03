@@ -31,8 +31,6 @@ const DynamicSurveillanceMap = dynamic(
 
 interface SupervisionFilters {
   date: string;
-  town?: string;
-  uc?: string;
 }
 
 interface UCVisitSummary {
@@ -73,9 +71,8 @@ export default function SupervisionDashboardPage() {
     date: new Date().toISOString().split("T")[0],
   });
 
-  // Get unique towns and UCs from all available town-UC combinations
+  // Get unique towns from all available town-UC combinations (used for grouping summaries)
   const towns = Array.from(new Set(allTownUCs.map((item) => item.town)));
-  const ucs = Array.from(new Set(allTownUCs.map((item) => item.uc)));
 
   // Fetch all data once to get town-UC combinations
   const fetchAllData = useCallback(async () => {
@@ -176,18 +173,6 @@ export default function SupervisionDashboardPage() {
     if (currentFilters.date) {
       filteredResults = filteredResults.filter(
         (item) => item["group_general/Date_of_Visit"] === currentFilters.date
-      );
-    }
-
-    if (currentFilters.town) {
-      filteredResults = filteredResults.filter(
-        (item) => item["group_general/town"] === currentFilters.town
-      );
-    }
-
-    if (currentFilters.uc) {
-      filteredResults = filteredResults.filter(
-        (item) => item["group_general/uc"] === currentFilters.uc
       );
     }
 
@@ -456,14 +441,14 @@ export default function SupervisionDashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            {/* <div className="flex items-center space-x-4">
               <Link
                 href="/supervision-dashboard/details"
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 View Details
               </Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </header>
@@ -476,7 +461,7 @@ export default function SupervisionDashboardPage() {
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Filter supervision visits by date, town, and union council
+                Filter supervision visits by date
               </p>
             </div>
             <button
@@ -507,67 +492,6 @@ export default function SupervisionDashboardPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={loading}
               />
-            </div>
-
-            {/* Town Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Town
-              </label>
-              <select
-                value={filters.town || ""}
-                onChange={(e) =>
-                  handleFilterChange({
-                    ...filters,
-                    town: e.target.value || undefined,
-                    uc: undefined,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
-              >
-                <option value="">All Towns</option>
-                {towns.map((town) => (
-                  <option key={town} value={town}>
-                    {town}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* UC Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Union Council
-              </label>
-              <select
-                value={filters.uc || ""}
-                onChange={(e) =>
-                  handleFilterChange({
-                    ...filters,
-                    uc: e.target.value || undefined,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading || !filters.town}
-              >
-                <option value="">All UCs</option>
-                {ucs
-                  .filter(
-                    (uc) =>
-                      !filters.town ||
-                      allData.some(
-                        (item) =>
-                          item["group_general/town"] === filters.town &&
-                          item["group_general/uc"] === uc
-                      )
-                  )
-                  .map((uc) => (
-                    <option key={uc} value={uc}>
-                      {uc}
-                    </option>
-                  ))}
-              </select>
             </div>
           </div>
         </div>
