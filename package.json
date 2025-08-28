@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/jspdf": "^2.0.0",
     "axios": "^1.10.0",
+    "jspdf": "^3.0.1",
     "leaflet": "^1.9.4",
     "next": "15.3.4",
     "react": "^19.0.0",

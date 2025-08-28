@@ -96,7 +96,7 @@ export default function SurveillanceMap({
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold mb-4">{title}</h2>
-        <div className="h-96 bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="h-96 md:h-[32rem] lg:h-[36rem] bg-gray-100 rounded-lg flex items-center justify-center">
           <div className="text-gray-500">Loading map...</div>
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function SurveillanceMap({
         </div>
       </div> */}
 
-      <div className="h-96">{mapContent}</div>
+      <div className="h-96 md:h-[32rem] lg:h-[36rem]">{mapContent}</div>
     </div>
   );
 }

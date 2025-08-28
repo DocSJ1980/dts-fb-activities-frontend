@@ -13,6 +13,7 @@ import {
   User,
 } from "@/types/surveillance";
 import { surveillanceApi } from "@/services/api";
+import { generateSurveillancePDF } from "@/utils/pdfGenerator";
 
 export default function IndoorSurveillancePage() {
   const [activities, setActivities] = useState<SurveillanceActivity[]>([]);
@@ -64,6 +65,35 @@ export default function IndoorSurveillancePage() {
 
   const handleFieldWorkerSelect = (fieldWorker: string | undefined) => {
     setSelectedFieldWorker(fieldWorker);
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const doc = await generateSurveillancePDF({
+        activities: filteredActivities,
+        containerData,
+        users,
+        filters: {
+          date: filters.date,
+          townCode: filters.townCode?.toString(),
+          ucCode: filters.ucCode?.toString(),
+        },
+        selectedFieldWorker,
+      });
+
+      // Generate filename with date and filters
+      const dateStr = new Date(filters.date).toISOString().split("T")[0];
+      let filename = `surveillance-report-${dateStr}`;
+      if (filters.townCode) filename += `-${filters.townCode}`;
+      if (filters.ucCode) filename += `-${filters.ucCode}`;
+      if (selectedFieldWorker) filename += `-${selectedFieldWorker}`;
+      filename += ".pdf";
+
+      doc.save(filename);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    }
   };
 
   // Filter activities based on field worker selection
@@ -164,6 +194,31 @@ export default function IndoorSurveillancePage() {
             fieldWorkers={[]} // Don't show field worker dropdown
           />
         </div>
+
+        {/* Export Button */}
+        {!loading && !error && filteredActivities.length > 0 && (
+          <div className="mb-6 flex justify-end">
+            <button
+              onClick={handleExportPDF}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+            >
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Export PDF Report
+            </button>
+          </div>
+        )}
 
         {/* Field Worker Cards */}
         {activities.length > 0 && (
