@@ -121,9 +121,42 @@ export default function HomePage() {
             </div>
           </Link>
 
+          {/* Maps Dashboard Card */}
+          <Link href="/maps" className="group">
+            <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1">
+              <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+                <span className="text-3xl">🗺️</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+                Comprehensive Maps Dashboard
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Multi-layer map visualization with advanced filtering for all
+                dengue activity tables. Compare and analyze data across
+                different time periods and locations.
+              </p>
+              <div className="flex items-center text-purple-600 font-medium">
+                <span>Explore Maps</span>
+                <svg
+                  className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </Link>
+
           {/* Analytics Card */}
           <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+            <div className="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
               <span className="text-3xl">📊</span>
             </div>
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
