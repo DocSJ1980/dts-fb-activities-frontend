@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       layerCounts[layer.id] = 0;
     });
 
-    layerResults.forEach(({ layerId, uc, markers }) => {
+    layerResults.forEach(({ layerId, markers }) => {
       allMarkers.push(...markers);
       layerCounts[layerId] += markers.length;
     });

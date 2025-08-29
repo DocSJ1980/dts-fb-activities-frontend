@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     const results = await Promise.all(optionsPromises);
     
     // Convert to object format
-    const filterOptions: Record<string, any[]> = {};
+    const filterOptions: Record<string, unknown[]> = {};
     results.forEach(({ field, options }) => {
       filterOptions[field] = options;
     });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface StringDropdownOption {
   value: string;
@@ -25,25 +26,65 @@ export default function StringDropdown({
   disabled = false,
 }: StringDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const selectedOption = options.find((option) => option.value === value);
+
+  // Calculate dropdown position
+  const updateDropdownPosition = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
     };
 
+    const handleScroll = () => {
+      if (isOpen) {
+        updateDropdownPosition();
+      }
+    };
+
+    const handleResize = () => {
+      if (isOpen) {
+        updateDropdownPosition();
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleResize);
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [isOpen]);
+
+  // Update position when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      updateDropdownPosition();
+    }
+  }, [isOpen]);
 
   const handleSelect = (optionValue: string) => {
     onChange(optionValue);
@@ -56,11 +97,21 @@ export default function StringDropdown({
     setIsOpen(false);
   };
 
+  const handleToggleOpen = () => {
+    if (!disabled && !loading) {
+      if (!isOpen) {
+        updateDropdownPosition();
+      }
+      setIsOpen(!isOpen);
+    }
+  };
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => !disabled && !loading && setIsOpen(!isOpen)}
+        onClick={handleToggleOpen}
         className={`
           relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 py-2 text-left cursor-default focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm
           ${
@@ -127,30 +178,42 @@ export default function StringDropdown({
         </button>
       )}
 
-      {isOpen && !loading && !disabled && (
-        <div className="absolute z-10 mt-1 w-full bg-white text-gray-700shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-          {options.length === 0 ? (
-            <div className="text-gray-500 px-3 py-2">No options available</div>
-          ) : (
-            options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleSelect(option.value)}
-                className={`
-                  w-full text-left px-3 py-2 hover:bg-blue-50 hover:text-blue-900 transition-colors text-gray-700
-                  ${
-                    option.value === value
-                      ? "bg-blue-100 text-blue-900"
-                      : "text-gray-900"
-                  }
-                `}
-              >
-                {option.label}
-              </button>
-            ))
-          )}
-        </div>
-      )}
+      {/* Dropdown Portal */}
+      {isOpen && !loading && !disabled &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="fixed z-50 bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${dropdownPosition.width}px`,
+            }}
+          >
+            {options.length === 0 ? (
+              <div className="text-gray-500 px-3 py-2">No options available</div>
+            ) : (
+              options.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleSelect(option.value)}
+                  className={`
+                    w-full text-left px-3 py-2 hover:bg-blue-50 hover:text-blue-900 transition-colors text-gray-700
+                    ${
+                      option.value === value
+                        ? "bg-blue-100 text-blue-900"
+                        : "text-gray-900"
+                    }
+                  `}
+                >
+                  {option.label}
+                </button>
+              ))
+            )}
+          </div>,
+          document.body
+        )
+      }
     </div>
   );
 }

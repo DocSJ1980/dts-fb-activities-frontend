@@ -1,4 +1,5 @@
 import pool from "./database";
+import { getMapsQueryLimit } from "./config";
 import {
   TableName,
   FilterLayer,
@@ -7,26 +8,80 @@ import {
   UCCentroid,
 } from "@/types/maps";
 
-// Function to normalize UC names for better matching
-function normalizeUCName(ucName: string): string {
-  return ucName.toLowerCase().replace(/-/g, " ").replace(/\s+/g, " ").trim();
-}
-
 // Build WHERE clause for table-specific filters
 function buildWhereClause(
   table: TableName,
-  filters: Record<string, any>,
+  filters: Record<string, unknown>,
   startParamIndex: number = 1
-): { clause: string; values: any[] } {
+): { clause: string; values: unknown[] } {
   const conditions: string[] = [];
-  const values: any[] = [];
+  const values: unknown[] = [];
   let paramIndex = startParamIndex;
 
   for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== null && value !== "") {
-      conditions.push(`${key} = $${paramIndex}`);
-      values.push(value);
-      paramIndex++;
+    if (value !== undefined && value !== null) {
+      // Special case for DTS Surveillance Activities
+      if (table === TableName.DTS_SURV_ACTIVITIES) {
+        if (key === "report_type") {
+          if (value !== "") {
+            conditions.push(`report_type = $${paramIndex}`);
+            values.push(value);
+            paramIndex++;
+          }
+        } else if (key === "larva_found") {
+          if (value === "yes") {
+            // Activity has containers with positive > 0
+            conditions.push(`EXISTS (
+              SELECT 1 FROM dts_containers c 
+              WHERE c.activity_id = s.activity_id 
+              AND c.positive > 0
+            )`);
+          } else if (value === "no") {
+            // Activity has no containers with positive > 0
+            conditions.push(`NOT EXISTS (
+              SELECT 1 FROM dts_containers c 
+              WHERE c.activity_id = s.activity_id 
+              AND c.positive > 0
+            )`);
+          }
+          // If value is empty (All), no filter is applied
+        } else if (value !== "") {
+          // Handle other filters normally
+          conditions.push(`${key} = $${paramIndex}`);
+          values.push(value);
+          paramIndex++;
+        }
+      } else if (table === TableName.DENGUE_SIMPLE_ACTIVITIES) {
+        if (key === "tag") {
+          // Only apply filter if not "All" (empty string)
+          if (value !== "") {
+            conditions.push(`tag = $${paramIndex}`);
+            values.push(value);
+            paramIndex++;
+          }
+        } else if (key === "dengue_larvae") {
+          if (value === "Positive") {
+            conditions.push(`dengue_larvae = $${paramIndex}`);
+            values.push("Positive");
+            paramIndex++;
+          } else if (value === "Not Positive") {
+            conditions.push(`dengue_larvae != $${paramIndex}`);
+            values.push("Positive");
+            paramIndex++;
+          }
+          // If value is empty (All), no filter is applied
+        } else if (value !== "") {
+          // Handle other filters normally
+          conditions.push(`${key} = $${paramIndex}`);
+          values.push(value);
+          paramIndex++;
+        }
+      } else if (value !== "") {
+        // Handle filters for other tables normally
+        conditions.push(`${key} = $${paramIndex}`);
+        values.push(value);
+        paramIndex++;
+      }
     }
   }
 
@@ -54,11 +109,9 @@ function getDateField(table: TableName): string {
 }
 
 // Check if table has coordinates
-function hasCoordinates(table: TableName): boolean {
-  return ![
-    TableName.DTS_CASE_RESPONSE_ACTIVITIES,
-    TableName.DTS_TPV_ACTIVITIES,
-  ].includes(table);
+function hasCoordinates(): boolean {
+  // All tables have coordinates based on user feedback
+  return true;
 }
 
 // Get primary key field name for each table
@@ -78,39 +131,58 @@ export async function queryLayerData(
   uc: string
 ): Promise<MapMarker[]> {
   const dateField = getDateField(layer.table);
-  const hasCoords = hasCoordinates(layer.table);
+  const hasCoords = hasCoordinates();
   const primaryKey = getPrimaryKeyField(layer.table);
 
   let baseQuery: string;
-  let values: any[] = [uc];
+  const values: unknown[] = [uc];
   let paramIndex = 2;
 
   if (hasCoords) {
     // Tables with coordinates - use fuzzy UC matching
-    baseQuery = `
-      SELECT
-        ${primaryKey} as id,
-        latitude,
-        longitude,
-        district,
-        town,
-        uc,
-        ${dateField} as date_field,
-        *
-      FROM ${layer.table}
-      WHERE (
-        LOWER(REPLACE(uc, '-', ' ')) = LOWER(REPLACE($1, '-', ' '))
-        OR LOWER(uc) = LOWER($1)
-        OR uc = $1
-      )
-    `;
+    if (layer.table === TableName.DTS_SURV_ACTIVITIES) {
+      // Special handling for surveillance activities with alias for subqueries
+      baseQuery = `
+        SELECT
+          s.${primaryKey} as id,
+          s.latitude,
+          s.longitude,
+          s.district,
+          s.town,
+          s.uc,
+          s.${dateField} as date_field,
+          s.*
+        FROM ${layer.table} s
+        WHERE (
+          LOWER(REPLACE(s.uc, '-', ' ')) = LOWER(REPLACE($1::text, '-', ' '))
+          OR LOWER(s.uc) = LOWER($1::text)
+          OR s.uc = $1::text
+        )
+      `;
+    } else {
+      baseQuery = `
+        SELECT
+          ${primaryKey} as id,
+          latitude,
+          longitude,
+          district,
+          town,
+          uc,
+          ${dateField} as date_field,
+          *
+        FROM ${layer.table}
+        WHERE (
+          LOWER(REPLACE(uc, '-', ' ')) = LOWER(REPLACE($1::text, '-', ' '))
+          OR LOWER(uc) = LOWER($1::text)
+          OR uc = $1::text
+        )
+      `;
+    }
   } else {
-    // Tables without coordinates - use UC centroids (fallback to default coordinates)
+    // Tables without coordinates - query directly without coordinate fields
     baseQuery = `
       SELECT
         t.${primaryKey} as id,
-        33.6844 as latitude,
-        73.0479 as longitude,
         t.district,
         t.town,
         t.uc,
@@ -118,9 +190,9 @@ export async function queryLayerData(
         t.*
       FROM ${layer.table} t
       WHERE (
-        LOWER(REPLACE(t.uc, '-', ' ')) = LOWER(REPLACE($1, '-', ' '))
-        OR LOWER(t.uc) = LOWER($1)
-        OR t.uc = $1
+        LOWER(REPLACE(t.uc, '-', ' ')) = LOWER(REPLACE($1::text, '-', ' '))
+        OR LOWER(t.uc) = LOWER($1::text)
+        OR t.uc = $1::text
       )
     `;
   }
@@ -149,7 +221,7 @@ export async function queryLayerData(
   // Add filter values to the main values array
   values.push(...filterValues);
 
-  baseQuery += " ORDER BY " + dateField + " DESC LIMIT 10000"; // Limit for performance
+  baseQuery += ` ORDER BY ${dateField} DESC LIMIT ${getMapsQueryLimit()}`;
 
   try {
     console.log(`Querying ${layer.table} for UC: ${uc}`);
@@ -200,7 +272,7 @@ export async function getFilterOptions(
     WHERE ${field} IS NOT NULL AND ${field} != ''
   `;
 
-  const values: any[] = [];
+  const values: unknown[] = [];
   if (uc) {
     query += " AND uc = $1";
     values.push(uc);

@@ -9,6 +9,7 @@ export interface DengueSimpleActivity {
   activity_datetime: string;
   dengue_larvae: string;
   tag: string;
+  name_address: string;
   submitted_by: string;
 }
 
@@ -49,6 +50,8 @@ export interface DtsContainer {
 
 export interface DtsCaseResponseActivity {
   id: string;
+  latitude: number;
+  longitude: number;
   district: string;
   town: string;
   uc: string;
@@ -59,6 +62,8 @@ export interface DtsCaseResponseActivity {
 
 export interface DtsTpvActivity {
   id: string;
+  latitude: number;
+  longitude: number;
   district: string;
   town: string;
   uc: string;
@@ -84,15 +89,16 @@ export interface FilterLayer {
   table: TableName;
   dateStart: string;
   dateEnd: string | null; // null means "till date"
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   color: string;
   enabled: boolean;
+  showAsClusters: boolean; // User-controlled clustering option
+  showAsDots: boolean; // User-controlled dots display option
   recordCount?: number;
 }
 
 // Maps filter state
 export interface MapsFilters {
-  selectedTown: string;
   selectedUCs: string[]; // Array of UC names for multi-select
   layers: FilterLayer[];
 }
@@ -109,7 +115,7 @@ export interface MapMarker {
   latitude: number;
   longitude: number;
   color: string;
-  popupData: Record<string, any>;
+  popupData: Record<string, unknown>;
   tableType: TableName;
 }
 

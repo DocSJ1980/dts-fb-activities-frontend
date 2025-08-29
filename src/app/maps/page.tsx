@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { Menu, X } from "lucide-react";
 import {
   MapsFilters,
-  FilterLayer,
   MapMarker,
   MapsDataRequest,
   MapsDataResponse,
@@ -25,7 +24,6 @@ const MultiLayerMap = dynamic(() => import("@/components/maps/MultiLayerMap"), {
 
 export default function MapsPage() {
   const [filters, setFilters] = useState<MapsFilters>({
-    selectedTown: "",
     selectedUCs: [],
     layers: [],
   });
@@ -133,6 +131,14 @@ export default function MapsPage() {
     return acc;
   }, {} as Record<string, string>);
 
+  const layerSettings = filters.layers.reduce((acc, layer) => {
+    acc[layer.id] = { 
+      showAsClusters: layer.showAsClusters,
+      showAsDots: layer.showAsDots 
+    };
+    return acc;
+  }, {} as Record<string, { showAsClusters: boolean; showAsDots: boolean }>);
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
@@ -218,6 +224,7 @@ export default function MapsPage() {
                 layerColors={layerColors}
                 enabledLayers={enabledLayers}
                 onLayerToggle={handleLayerToggle}
+                layerSettings={layerSettings}
                 title="Multi-Layer Activity Map"
               />
             </div>

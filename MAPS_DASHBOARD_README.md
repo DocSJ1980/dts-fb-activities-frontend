@@ -7,38 +7,46 @@ The Comprehensive Maps Dashboard is a powerful multi-layer mapping interface tha
 ## Features
 
 ### 🗺️ Multi-Layer Map Visualization
+
 - Display data from 6 different dengue activity tables on a single map
 - Color-coded markers for easy layer identification
 - Interactive popups with detailed information
 - Responsive design for desktop and mobile devices
 
 ### 🔍 Advanced Filtering System
+
 - **UC-based filtering**: All queries are filtered by selected Union Council
 - **Dynamic layer management**: Add, remove, and configure multiple filter layers
 - **Date range filtering**: Flexible date selection with "till date" option
 - **Table-specific filters**: Customized filters for each data table
+- **User-controlled clustering**: Optional clustering for any layer regardless of data size
 - **Real-time record counts**: See how many records match your filters
 
 ### 📊 Supported Data Tables
 
 1. **Dengue Simple Activities** (`dengue_simple_activities`)
+
    - Fields: latitude, longitude, district, town, uc, activity_datetime, dengue_larvae, tag, submitted_by
    - Filters: tag, dengue_larvae, district, town, submitted_by
 
 2. **Patient Activities** (`dts_patient_activities`)
+
    - Fields: latitude, longitude, district, town, uc, activity_submission_datetime, patient_name, category_name, tag_name
    - Filters: tag_name, category_name, district, town, submitted_by
 
 3. **Surveillance Activities** (`dts_surv_activities`)
+
    - Fields: latitude, longitude, district, town, uc, activity_datetime, report_type, submitted_by, activity_id
    - Filters: report_type, district, town, submitted_by
 
 4. **Container Data** (`dts_containers`)
+
    - Linked to surveillance activities via activity_id
    - Fields: activity_id, container_tag, checked, positive
    - Filters: container_tag
 
 5. **Case Response Activities** (`dts_case_response_activities`)
+
    - Fields: district, town, uc, submission_date, larva_source, submitted_by
    - Filters: larva_source, district, town, submitted_by
    - **Note**: No coordinates - uses UC centroids
@@ -53,13 +61,16 @@ The Comprehensive Maps Dashboard is a powerful multi-layer mapping interface tha
 ### Getting Started
 
 1. **Navigate to Maps Dashboard**
+
    - Go to `/maps` or click "Comprehensive Maps Dashboard" from the home page
 
 2. **Select Union Council**
+
    - Choose a UC from the dropdown (required for all queries)
    - The dropdown shows UCs with their parent town names
 
 3. **Add Filter Layers**
+
    - Click "Add Layer" to create a new filter layer
    - Configure each layer with:
      - Custom name for easy identification
@@ -67,6 +78,7 @@ The Comprehensive Maps Dashboard is a powerful multi-layer mapping interface tha
      - Date range (start date and optional end date)
      - Table-specific filters
      - Color for map markers
+     - Clustering option (show as clusters checkbox)
      - Enable/disable toggle
 
 4. **Apply Filters**
@@ -77,6 +89,7 @@ The Comprehensive Maps Dashboard is a powerful multi-layer mapping interface tha
 ### Example Use Cases
 
 **Scenario 1: Indoor Surveillance Analysis**
+
 ```
 Layer 1: "Indoor Surveillance August"
 - Table: dts_surv_activities
@@ -92,6 +105,7 @@ Layer 2: "Container Positives August"
 ```
 
 **Scenario 2: Multi-Activity Comparison**
+
 ```
 Layer 1: "Patient Activities"
 - Table: dts_patient_activities
@@ -114,6 +128,7 @@ Layer 3: "Case Response"
 ## Technical Architecture
 
 ### Database Integration
+
 - **PostgreSQL Connection**: Uses connection pooling for optimal performance
 - **Optimized Queries**: Indexed queries with proper WHERE clauses
 - **UC Centroids**: Fallback coordinates for tables without lat/lng data
@@ -121,36 +136,43 @@ Layer 3: "Case Response"
 ### API Endpoints
 
 #### `/api/maps/data` (POST)
+
 - **Purpose**: Fetch map data for multiple layers
 - **Input**: UC and array of filter layer configurations
 - **Output**: GeoJSON-style markers with popup data and layer counts
 - **Caching**: 2-minute cache for identical requests
 
 #### `/api/maps/filter-options` (GET)
+
 - **Purpose**: Get available filter options for dropdown menus
 - **Parameters**: `table` (required), `uc` (optional)
 - **Output**: Object with field names as keys and option arrays as values
 
 #### `/api/maps/uc-centroids` (GET)
+
 - **Purpose**: Get UC centroid coordinates for tables without coordinates
 - **Output**: Array of UC objects with latitude/longitude
 
 ### Performance Optimizations
 
 1. **Caching System**
+
    - In-memory cache with TTL (Time To Live)
    - Automatic cache cleanup for expired entries
    - Cache key generation from request parameters
 
 2. **Query Optimization**
+
    - Parallel execution of layer queries
-   - Limit of 10,000 records per layer for performance
+   - Configurable record limit per layer (default: 100,000)
    - Indexed database queries on commonly filtered fields
+   - Fuzzy UC name matching for better data retrieval
 
 3. **Client-Side Optimizations**
    - Debounced filter updates
    - Dynamic component loading (no SSR for maps)
    - Efficient state management
+   - Automatic clustering for high-density layers (configurable threshold)
 
 ## File Structure
 
@@ -179,6 +201,7 @@ src/
 ## Database Requirements
 
 ### Required Tables
+
 Ensure the following tables exist in your PostgreSQL database:
 
 1. `dengue_simple_activities`
@@ -189,9 +212,11 @@ Ensure the following tables exist in your PostgreSQL database:
 6. `dts_tpv_activities`
 
 ### Optional Table
+
 - `uc_centroids`: For tables without coordinates (auto-calculated if missing)
 
 ### Recommended Indexes
+
 ```sql
 -- For performance optimization
 CREATE INDEX idx_dengue_simple_uc_date ON dengue_simple_activities(uc, activity_datetime);
@@ -206,13 +231,35 @@ CREATE INDEX idx_tpv_uc_date ON dts_tpv_activities(uc, tpv_activity_date_time);
 Ensure these are set in your `.env.local`:
 
 ```env
+# Database Configuration
 DATABASE_URL=postgresql://username:password@host:port/database_name
+
+# API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1  # For existing surveillance API
+KFKOBO_TOKEN=your_kobo_token_here
+
+# Maps Configuration
+MAPS_QUERY_LIMIT=100000        # Maximum records per query (default: 100,000)
+MAPS_CLUSTER_THRESHOLD=7000    # Marker count threshold for clustering (default: 7,000)
 ```
+
+### Configuration Options
+
+- **`MAPS_QUERY_LIMIT`**: Controls the maximum number of records returned per layer query
+
+  - Default: 100,000
+  - Higher values: More complete data but slower queries
+  - Lower values: Faster queries but potentially incomplete data
+
+- **`MAPS_CLUSTER_THRESHOLD`**: Sets when layers automatically switch to clustering
+  - Default: 7,000 markers
+  - Higher values: More individual markers before clustering
+  - Lower values: Earlier clustering for better performance
 
 ## Future Enhancements
 
 ### Planned Features
+
 - **Marker Clustering**: For better performance with large datasets
 - **Export Functionality**: CSV/GeoJSON export of filtered data
 - **Layer Templates**: Save and load common filter configurations
@@ -221,6 +268,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1  # For existing surveillance AP
 - **Advanced Analytics**: Statistical analysis of filtered data
 
 ### Performance Improvements
+
 - **Database Optimization**: Materialized views for common queries
 - **Progressive Loading**: Load markers in batches
 - **WebSocket Updates**: Real-time data updates
@@ -231,11 +279,13 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1  # For existing surveillance AP
 ### Common Issues
 
 1. **No data showing on map**
+
    - Verify UC selection is made
    - Check if selected date ranges contain data
    - Ensure database connection is working
 
 2. **Slow performance**
+
    - Check database indexes are in place
    - Reduce date range for large datasets
    - Clear cache if needed
@@ -246,6 +296,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1  # For existing surveillance AP
    - Review API endpoint logs
 
 ### Debug Mode
+
 Enable debug logging by checking browser console for API request/response details.
 
 ## Support

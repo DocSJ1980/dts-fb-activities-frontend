@@ -1,6 +1,6 @@
 // Simple in-memory cache for map data
 interface CacheEntry {
-  data: any;
+  data: unknown;
   timestamp: number;
   ttl: number; // Time to live in milliseconds
 }
@@ -10,7 +10,7 @@ class MapsCache {
   private readonly defaultTTL = 5 * 60 * 1000; // 5 minutes
 
   // Generate cache key from request parameters
-  private generateKey(params: any): string {
+  private generateKey(params: unknown): string {
     return JSON.stringify(params);
   }
 
@@ -20,7 +20,7 @@ class MapsCache {
   }
 
   // Get data from cache
-  get(params: any): any | null {
+  get(params: unknown): unknown | null {
     const key = this.generateKey(params);
     const entry = this.cache.get(key);
     
@@ -37,7 +37,7 @@ class MapsCache {
   }
 
   // Set data in cache
-  set(params: any, data: any, ttl: number = this.defaultTTL): void {
+  set(params: unknown, data: unknown, ttl: number = this.defaultTTL): void {
     const key = this.generateKey(params);
     this.cache.set(key, {
       data,
@@ -73,7 +73,7 @@ class MapsCache {
 export const mapsCache = new MapsCache();
 
 // Debounce utility for API calls
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -86,7 +86,7 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 // Throttle utility for frequent updates
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
