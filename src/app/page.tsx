@@ -73,21 +73,35 @@ export default function HomePage() {
           </Link>
 
           {/* Outdoor Vector Surveillance Card */}
-          <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mb-6">
-              <span className="text-3xl">🌿</span>
+          <Link href="/outdoor-surveillance" className="group">
+            <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1">
+              <div className="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center mb-6">
+                <span className="text-3xl">🌿</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+                Outdoor Vector Surveillance
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Monitor outdoor dengue vector activities performed by male staff with up-to-date data and insights.
+              </p>
+              <div className="flex items-center text-orange-600 font-medium">
+                <span>Explore Activities</span>
+                <svg
+                  className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
             </div>
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-              Outdoor Vector Surveillance
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Monitor outdoor dengue vector activities with up-to-date data and
-              insights.
-            </p>
-            <div className="flex items-center text-gray-400 font-medium">
-              <span>Coming Soon</span>
-            </div>
-          </div>
+          </Link>
 
           {/* Supervision Dashboard Card */}
           <Link href="/supervision-dashboard" className="group">

@@ -7,9 +7,17 @@ import {
 } from "@/types/surveillance";
 
 const API_BASE_URL = "/api/indoor-surveillance";
+const OUTDOOR_API_BASE_URL = "/api/outdoor-surveillance";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+const outdoorApi = axios.create({
+  baseURL: OUTDOOR_API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
@@ -31,6 +39,22 @@ api.interceptors.request.use(
   }
 );
 
+// Add request interceptor for outdoor API debugging
+outdoorApi.interceptors.request.use(
+  (config) => {
+    console.log(
+      "Outdoor API Request:",
+      config.method?.toUpperCase(),
+      config.url,
+      config.params
+    );
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
@@ -38,6 +62,24 @@ api.interceptors.response.use(
   },
   (error) => {
     console.error("API Error Details:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      url: error.config?.url,
+      params: error.config?.params,
+    });
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for outdoor API error handling
+outdoorApi.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error("Outdoor API Error Details:", {
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
@@ -129,6 +171,99 @@ export const surveillanceApi = {
       // Return empty response instead of throwing to prevent app crash
       if (err.response?.status === 422 || err.response?.status === 400) {
         console.warn("API returned error - returning empty response");
+        return {
+          combined_data: [],
+          container_data: [],
+          users: [],
+          total_records: 0,
+        };
+      }
+
+      throw error;
+    }
+  },
+};
+
+export const outdoorSurveillanceApi = {
+  // Get all towns
+  getTowns: async (): Promise<Town[]> => {
+    try {
+      const response = await outdoorApi.get("?endpoint=towns");
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as Error & {
+        response?: { status?: number; data?: unknown };
+      };
+      console.error("Error fetching towns:", {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+      // Return empty array if API fails
+      return [];
+    }
+  },
+
+  // Get UCs for a specific town
+  getUCs: async (townId: number | string): Promise<UC[]> => {
+    try {
+      const response = await outdoorApi.get(`?endpoint=ucs&town_id=${townId}`);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as Error & {
+        response?: { status?: number; data?: unknown };
+      };
+      console.error("Error fetching UCs:", {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+      // Return empty array if API fails
+      return [];
+    }
+  },
+
+  // Get outdoor surveillance data with filters
+  getSurveillanceData: async (
+    filters: SurveillanceFilters
+  ): Promise<SurveillanceResponse> => {
+    try {
+      // Build query parameters
+      const params = new URLSearchParams({
+        endpoint: "surveillance-data",
+        date: filters.date,
+      });
+
+      if (filters.townCode) {
+        params.append("town_code", filters.townCode.toString());
+      }
+
+      if (filters.ucCode) {
+        params.append("uc_code", filters.ucCode.toString());
+      }
+
+      console.log("Sending outdoor request with params:", params.toString());
+
+      const response = await outdoorApi.get<SurveillanceResponse>(`?${params.toString()}`);
+      console.log("Outdoor API Response:", response.data);
+
+      // Return the full response
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as Error & {
+        response?: { status?: number; data?: unknown };
+        config?: { params?: unknown };
+      };
+      console.error("Error fetching outdoor surveillance data:", {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        params: err.config?.params,
+      });
+
+      // Return empty response instead of throwing to prevent app crash
+      if (err.response?.status === 422 || err.response?.status === 400) {
+        console.warn("Outdoor API returned error - returning empty response");
         return {
           combined_data: [],
           container_data: [],

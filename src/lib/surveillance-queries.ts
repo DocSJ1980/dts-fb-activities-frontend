@@ -169,6 +169,123 @@ export async function querySurveillanceActivities(
 }
 
 /**
+ * Query outdoor surveillance activities from the database with filters
+ */
+export async function queryOutdoorSurveillanceActivities(
+  filters: SurveillanceFilters
+): Promise<SurveillanceActivity[]> {
+  const conditions: string[] = [];
+  const values: unknown[] = [];
+  let paramIndex = 1;
+
+  // Base query for outdoor surveillance activities
+  let baseQuery = `
+    SELECT 
+      id,
+      activity_id,
+      name_of_family_head,
+      shop_house,
+      address,
+      locality,
+      district,
+      town,
+      uc,
+      report_type,
+      submitted_by,
+      activity_datetime,
+      picture_url,
+      latitude,
+      longitude
+    FROM dts_surv_activities
+    WHERE report_type = 'outdoor'
+  `;
+
+  // Add date filter
+  if (filters.date) {
+    conditions.push(`DATE(activity_datetime) = $${paramIndex}`);
+    values.push(filters.date);
+    paramIndex++;
+  }
+
+  // Add town filter if specified
+  if (filters.townCode) {
+    // Join with town_data to get the town name for filtering
+    conditions.push(`EXISTS (
+      SELECT 1 FROM town_data td 
+      WHERE td.id = $${paramIndex} 
+      AND td.town = dts_surv_activities.town
+    )`);
+    values.push(filters.townCode);
+    paramIndex++;
+  }
+
+  // Add UC filter if specified
+  if (filters.ucCode) {
+    // Join with uc_data to get the UC name for filtering
+    conditions.push(`EXISTS (
+      SELECT 1 FROM uc_data ud 
+      WHERE ud.id = $${paramIndex} 
+      AND ud.surveillance_db_uc = dts_surv_activities.uc
+    )`);
+    values.push(filters.ucCode);
+    paramIndex++;
+  }
+
+  // Add conditions to query
+  if (conditions.length > 0) {
+    baseQuery += ` AND ${conditions.join(" AND ")}`;
+  }
+
+  baseQuery += ` ORDER BY activity_datetime DESC`;
+
+  try {
+    console.log("Querying outdoor surveillance activities:", baseQuery);
+    console.log("Values:", values);
+
+    const result = await pool.query(baseQuery, values);
+    
+    console.log(`Found ${result.rows.length} outdoor surveillance activities`);
+
+    return result.rows.map((row): SurveillanceActivity => ({
+      id: row.id,
+      activity_id: row.activity_id,
+      name_of_family_head: row.name_of_family_head || "",
+      shop_house: row.shop_house || "",
+      address: row.address || "",
+      locality: row.locality || "",
+      district: row.district || "",
+      town: row.town || "",
+      uc: row.uc || "",
+      report_type: row.report_type || "",
+      submitted_by: row.submitted_by || "",
+      activity_datetime: row.activity_datetime?.toISOString() || "",
+      picture_url: row.picture_url || "",
+      latitude: parseFloat(row.latitude) || 0,
+      longitude: parseFloat(row.longitude) || 0,
+      // Legacy mappings for backward compatibility
+      Sr_No: row.id?.toString(),
+      Activity_ID: row.activity_id,
+      Name_of_Family_Head: row.name_of_family_head || "",
+      Shop_House: row.shop_house || "",
+      Address: row.address || "",
+      Locality: row.locality || "",
+      District: row.district || "",
+      Town: row.town || "",
+      UC: row.uc || "",
+      Tag: row.submitted_by || "",
+      Submitted_by: row.submitted_by || "",
+      Activity_DateTime: row.activity_datetime?.toISOString() || "",
+      Picture: row.picture_url || "",
+      Latitude: parseFloat(row.latitude) || 0,
+      Longitude: parseFloat(row.longitude) || 0,
+    }));
+  } catch (error) {
+    console.error("Error querying outdoor surveillance activities:", error);
+    throw error;
+  }
+}
+
+/**
  * Query container data for surveillance activities
  */
 export async function queryContainerData(
@@ -311,6 +428,99 @@ export async function queryUsers(filters: SurveillanceFilters): Promise<User[]> 
 }
 
 /**
+ * Query unique users from outdoor surveillance activities with employee data
+ */
+export async function queryOutdoorUsers(filters: SurveillanceFilters): Promise<User[]> {
+  const conditions: string[] = [];
+  const values: unknown[] = [];
+  let paramIndex = 1;
+
+  let baseQuery = `
+    SELECT DISTINCT 
+      dsa.submitted_by as username,
+      dsa.submitted_by as full_name,
+      ed.name,
+      ed.fh_name,
+      ed.cnic,
+      ed.personal_no,
+      ed.designation,
+      ed.activity_type,
+      ed.new_username,
+      ed.town,
+      ed.town_id
+    FROM dts_surv_activities dsa
+    LEFT JOIN employee_data ed ON (
+      dsa.submitted_by = ed.username OR 
+      dsa.submitted_by = ed.new_username
+    )
+    WHERE dsa.report_type = 'outdoor'
+    AND dsa.submitted_by IS NOT NULL
+    AND dsa.submitted_by != ''
+  `;
+
+  // Add same filters as activities to ensure consistency
+  if (filters.date) {
+    conditions.push(`DATE(dsa.activity_datetime) = $${paramIndex}`);
+    values.push(filters.date);
+    paramIndex++;
+  }
+
+  if (filters.townCode) {
+    conditions.push(`EXISTS (
+      SELECT 1 FROM town_data td 
+      WHERE td.id = $${paramIndex} 
+      AND td.town = dsa.town
+    )`);
+    values.push(filters.townCode);
+    paramIndex++;
+  }
+
+  if (filters.ucCode) {
+    conditions.push(`EXISTS (
+      SELECT 1 FROM uc_data ud 
+      WHERE ud.id = $${paramIndex} 
+      AND ud.surveillance_db_uc = dsa.uc
+    )`);
+    values.push(filters.ucCode);
+    paramIndex++;
+  }
+
+  if (conditions.length > 0) {
+    baseQuery += ` AND ${conditions.join(" AND ")}`;
+  }
+
+  baseQuery += ` ORDER BY dsa.submitted_by`;
+
+  try {
+    console.log("Querying outdoor users with employee data:", baseQuery);
+    console.log("Values:", values);
+
+    const result = await pool.query(baseQuery, values);
+    
+    console.log(`Found ${result.rows.length} unique outdoor users`);
+
+    return result.rows.map((row): User => ({
+      username: row.username,
+      full_name: row.full_name,
+      // Employee data fields
+      name: row.name,
+      fh_name: row.fh_name,
+      cnic: row.cnic,
+      personal_no: row.personal_no,
+      designation: row.designation,
+      // contact_no removed for privacy protection
+      activity_type: row.activity_type,
+      new_username: row.new_username,
+      town: row.town,
+      town_id: row.town_id,
+    }));
+  } catch (error) {
+    console.error("Error querying outdoor users:", error);
+    throw error;
+  }
+}
+
+/**
  * Get complete surveillance data (activities, containers, users) with filters
  */
 export async function getSurveillanceData(
@@ -347,6 +557,47 @@ export async function getSurveillanceData(
     return response;
   } catch (error) {
     console.error("Error getting surveillance data:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get complete outdoor surveillance data (activities, containers, users) with filters
+ */
+export async function getOutdoorSurveillanceData(
+  filters: SurveillanceFilters
+): Promise<SurveillanceResponse> {
+  try {
+    console.log("Getting outdoor surveillance data with filters:", filters);
+
+    // Query outdoor activities
+    const activities = await queryOutdoorSurveillanceActivities(filters);
+    
+    // Extract activity IDs for container query
+    const activityIds = activities.map(activity => activity.activity_id);
+    
+    // Query containers and users in parallel
+    const [containerData, users] = await Promise.all([
+      queryContainerData(activityIds),
+      queryOutdoorUsers(filters),
+    ]);
+
+    const response: SurveillanceResponse = {
+      combined_data: activities,
+      container_data: containerData,
+      users,
+      total_records: activities.length,
+    };
+
+    console.log("Outdoor surveillance data query complete:", {
+      activities: activities.length,
+      containers: containerData.length,
+      users: users.length,
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Error getting outdoor surveillance data:", error);
     throw error;
   }
 }

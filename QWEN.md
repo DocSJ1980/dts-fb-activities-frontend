@@ -1,126 +1,109 @@
-# Project Context for `dts-fb-activities-frontend`
+# Project Context for dts-fb-activities-frontend
 
-This project is a Next.js 15 application designed to visualize and analyze various dengue prevention and field activity data for the District Health Authority Rawalpindi. It integrates with multiple data sources to present information through different dashboards.
+This document provides an overview of the `dts-fb-activities-frontend` project for use in future interactions and development tasks.
 
-## Core Functionality
+## Project Overview
 
-### 1. Supervision Dashboard (KoboToolbox Integration)
-1.  **Data Fetching:**
-    *   A server-side API route (`/api/supervision`) fetches data from a KoboToolbox asset endpoint.
-    *   It uses an Authorization token (from environment variables) for secure access to the KoboToolbox API.
-    *   If the API call fails or the token is not configured, it falls back to a local `sample_response.json` file for offline development.
-2.  **Supervision Dashboard:**
-    *   **List View (`/supervision-dashboard/details`):**
-        *   Displays a grid of cards, one for each Kobo submission.
-        *   Each card shows key summary information (Town, UC, Visit Date/Time, Team Info, Area Address).
-        *   It calculates and displays a "Health Settings Count" (number of houses/spots visited) and "Risk Flags" (e.g., Larvae Found, Fake Work Detected) based on the submission data.
-        *   Two performance grades (Team Performance 'T:' and Supervisory Quality 'S:') are calculated and shown on the card using color-coded badges.
-        *   Clicking a card navigates to the detail view for that submission.
-    *   **Detail View (`/supervision-dashboard/details/[id]`):**
-        *   Shows comprehensive information for a single submission identified by its `_id`.
-        *   Displays General Information and Team Information.
-        *   Presents detailed data for up to 5 "House/Spot Verified" entries (HS 1-5), including questions, answers, and associated images.
-        *   Features a performance analysis section that provides detailed grades and feedback for both the field team's work and the supervisor's quality of verification. This analysis is based on specific answers within the submission (e.g., checking if larvae were found, if work was fake, inspection completeness).
-        *   Integrates a Leaflet map (`SubmissionMap` component) to visualize the geographical locations of the verified houses/spots from the submission.
-        *   Lists all attachments (images) associated with the submission.
+This is a Next.js 15 application designed to serve as a frontend for visualizing and managing field activities related to dengue prevention for the District Health Authority Rawalpindi. It integrates with a PostgreSQL database to fetch and display different types of dengue surveillance and response activities.
 
-### 2. Indoor Vector Surveillance Dashboard (`/indoor-surveillance`)
-1.  **Data Source:** Fetches data from a custom backend API (likely a Node.js/Express or similar service) via `axios`.
-2.  **API Endpoint:** `/api/v1/surveillance-data` (configured via `NEXT_PUBLIC_API_URL` environment variable).
-3.  **Data Types:**
-    *   `SurveillanceActivity`: Represents a single surveillance activity record with details like family head name, address, location coordinates, submitted by user, and a picture.
-    *   `ContainerData`: Details about containers checked during an activity, including whether they were positive for larvae.
-    *   `User`: Information about field workers/users who submitted the data.
-4.  **Functionality:**
-    *   Allows filtering data by date, town, and UC.
-    *   Displays a summary of key metrics: Houses Checked, Houses Positive, Containers Checked, Containers Positive.
-    *   Shows a map (`DynamicSurveillanceMap`) of activity locations.
-    *   Provides a feed (`SurveillanceFeed`) of individual activity records with their container details.
-    *   Groups activities by field worker using `FieldWorkerCards`, allowing filtering by a specific worker.
-    *   Uses client-side state management (`useState`, `useEffect`) for filtering and displaying data.
+### Key Features
 
-### 3. Comprehensive Maps Dashboard (`/maps`)
-1.  **Data Source:** Fetches data directly from a PostgreSQL database using `pg` (node-postgres) within a Next.js API route (`/api/maps/data`).
-2.  **Data Types:**
-    *   Multiple database tables are represented:
-        *   `DengueSimpleActivity`: Basic dengue-related activities.
-        *   `DtsPatientActivity`: Patient-related activities.
-        *   `DtsSurvActivity`: Surveillance activities.
-        *   `DtsContainer`: Container inspection data linked to surv activities.
-        *   `DtsCaseResponseActivity`: Case response activities.
-        *   `DtsTpvActivity`: TPV (Third Party Verification) activities.
-3.  **Functionality:**
-    *   Allows complex filtering with "layers". Each layer represents a specific query configuration:
-        *   Selects a database table.
-        *   Applies date range filters.
-        *   Applies table-specific filters (e.g., report type, larvae presence).
-        *   Configures visualization options (color, clustering, dots).
-    *   Users can select multiple UCs (Union Councils) to focus the map.
-    *   Fetches data for all enabled layers and selected UCs via a single POST request to `/api/maps/data`.
-    *   Displays data points from different layers on a single interactive map (`MultiLayerMap`), using different colors for each layer.
-    *   Provides layer toggling and summary counts for each layer.
-    *   Uses server-side database queries (`lib/maps-queries.ts`) to fetch and format data into `MapMarker` objects.
-    *   Implements basic caching (`lib/maps-cache.ts`) for API responses to improve performance.
-    *   Dynamically imports the map component to avoid SSR issues.
+1.  **Supervision Dashboard** (`/supervision-dashboard`)
+    - Fetches submissions from a self-hosted KoboToolbox instance to display field team supervision data.
+    - Renders a list page (`/supervision-dashboard/details`) showing submission cards with key insights.
+    - Provides a detail page (`/supervision-dashboard/details/[id]`) for viewing complete submission information and attachments.
+    - Analyzes submission data to assess team performance and supervisory quality, assigning grades (A-F) and identifying risk flags.
+    - Uses a server-side API route (`/api/supervision`) to securely fetch data from KoboToolbox.
+    - Includes a fallback mechanism using a local `sample_response.json` file.
 
-## Key Technologies & Libraries
+2.  **Indoor Vector Surveillance** (`/indoor-surveillance`)
+    - Displays indoor surveillance activities based on data fetched from the local PostgreSQL database.
+    - Features filtering capabilities by date, town, and union council (UC).
+    - Shows field worker performance cards and allows filtering by specific workers.
+    - Implements a map view (`DynamicSurveillanceMap`) to visualize activity locations.
+    - Provides a feed view (`SurveillanceFeed`) to list activities.
+    - Calculates and displays summary statistics (houses checked, houses positive, containers checked, containers positive).
+    - Uses a server-side API route (`/api/indoor-surveillance`) to fetch data from the database with efficient filtering.
 
-*   **Framework:** Next.js 15 (App Router, React Server Components)
-*   **Language:** TypeScript
-*   **Styling:** Tailwind CSS
-*   **Data Fetching:**
-    *   Native `fetch` API (server-side for KoboToolbox)
-    *   `axios` (client-side for backend API)
-    *   `pg` (node-postgres for direct database access)
-*   **Maps:** Leaflet, React-Leaflet, Leaflet.markercluster
-*   **UI Components:** Custom components (e.g., `SupervisionCard`, `SupervisionDetail`, `SubmissionMap`, `FilterPanel`, `FieldWorkerCards`, `DynamicSurveillanceMap`, `SurveillanceFeed`, `MapsFilterPanel`, `MultiLayerMap`)
-*   **Utilities:** Custom utility functions (e.g., in `src/utils/kobo.ts` for Kobo data processing and analysis).
+3.  **Comprehensive Maps Dashboard** (`/maps`)
+    - Offers a multi-layer map visualization for all types of dengue activities.
+    - Allows users to select multiple Union Councils (UCs) and enable/disable different data layers.
+    - Supports various activity types including simple dengue activities, patient activities, surveillance activities, container data, case response activities, and TPV activities.
+    - Configurable layer settings (color, clustering, dots display).
+    - Uses a server-side API route (`/api/maps/data`) to fetch map marker data based on selected filters.
+    - Implements caching for map data to improve performance.
 
-## Development & Build Process
+### Main Technologies
 
-*   **Package Manager:** `pnpm`
-*   **Key Scripts:**
-    *   `pnpm dev`: Starts the Next.js development server.
-    *   `pnpm build`: Builds the application for production.
-    *   `pnpm start`: Starts the production server (on port 4000 as configured).
-    *   `pnpm lint`: Runs the Next.js linter.
-*   **Environment Variables:**
-    *   `KFKOBO_BASE_URL`, `KFKOBO_ASSET_ID`, `KFKOBO_TOKEN`, `KFKOBO_DJANGO_LANG`: Used for connecting to the KoboToolbox API. `.env.local` should be created for these.
-    *   `NEXT_PUBLIC_BASE_PATH`: Optional, for hosting the app behind a subpath.
-    *   `NEXT_PUBLIC_API_URL`: Base URL for the backend API used by the Indoor Surveillance dashboard.
-    *   `DATABASE_URL`: Connection string for the PostgreSQL database used by the Maps dashboard.
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: React, with custom components for cards, maps, feeds, and filters.
+- **Data Fetching**: `fetch` API (both server-side in routes and client-side).
+- **Database**: PostgreSQL (accessed via server-side API routes)
+- **Mapping**: Leaflet.js with React Leaflet for map visualizations.
+- **Dependencies**: Key libraries include `next`, `react`, `react-dom`, `tailwindcss`, `lucide-react` for icons, `leaflet` and `react-leaflet` for maps, and `axios` for API calls.
 
-## Important Conventions & Notes
+## Building and Running
 
-*   **Security:**
-    *   KoboToolbox API tokens (`KFKOBO_TOKEN`) must only be used on the server side (e.g., in `route.ts` files). Never expose them in client-side code.
-    *   Database connections and queries are handled server-side within API routes.
-*   **Data Handling:**
-    *   The application relies on specific field names from the KoboToolbox form (defined in `src/types/kobo.ts`).
-    *   Backend API data structures are defined in `src/types/surveillance.ts`.
-    *   Database table structures and map layer configurations are defined in `src/types/maps.ts`.
-    *   Changes in data source schemas would require updates to corresponding types and data processing logic.
-*   **Performance:**
-    *   Server routes and pages that fetch data use `dynamic = 'force-dynamic'` and `cache: 'no-store'` to ensure fresh data is retrieved on every request where necessary.
-    *   Maps dashboard implements basic caching for database query results.
-    *   Server-side database queries are limited to prevent excessive load.
-*   **Images:** Next.js `remotePatterns` in `next.config.ts` are configured to allow loading images from KoboToolbox instances.
-*   **Analysis Logic:** The core logic for evaluating team performance and supervisory quality for Kobo data resides in `src/utils/kobo.ts` (`analyzeSupervisoryQuality` function).
+### Prerequisites
 
-## File Structure (Key Files)
+- Node.js (version compatible with Next.js 15)
+- pnpm package manager
 
-*   `src/app/api/supervision/route.ts`: Server-side endpoint to fetch Kobo data.
-*   `src/app/supervision-dashboard/details/page.tsx`: List view of Kobo submissions.
-*   `src/app/supervision-dashboard/details/[id]/page.tsx`: Detailed view of a single Kobo submission.
-*   `src/app/indoor-surveillance/page.tsx`: Main page for the Indoor Surveillance dashboard.
-*   `src/app/maps/page.tsx`: Main page for the Comprehensive Maps dashboard.
-*   `src/app/api/maps/data/route.ts`: Server-side endpoint to fetch map data from the database.
-*   `src/lib/database.ts`: PostgreSQL connection pool configuration.
-*   `src/lib/maps-queries.ts`: Functions to query database tables and format data for the map.
-*   `src/services/api.ts`: `axios` instance and functions to interact with the backend API for surveillance data.
-*   `src/components/supervision/`: Contains reusable UI components for the Kobo dashboard.
-*   `src/components/maps/`: Contains reusable UI components for the Maps dashboard.
-*   `src/components/`: Other shared components like filters and feeds.
-*   `src/utils/kobo.ts`: Utility functions for Kobo data processing and analysis.
-*   `src/types/`: TypeScript interfaces for all data types used across different dashboards.
-*   `sample_response.json`: Local sample data for KoboToolbox integration offline development/testing.
+### Setup and Development
+
+1.  **Install Dependencies**:
+    ```bash
+    pnpm install
+    ```
+2.  **Environment Configuration**:
+    - For KoboToolbox integration (used by Supervision Dashboard), create a `.env.local` file in the project root and add the following variables:
+      ```bash
+      KFKOBO_BASE_URL=https://kf.mydomain.com # Your KoboToolbox instance URL
+      KFKOBO_ASSET_ID=my_form_id             # Your KoboToolbox form asset ID
+      KFKOBO_TOKEN=Token my_kobo_token       # Your KoboToolbox API token (including the 'Token ' prefix)
+      KFKOBO_DJANGO_LANG=en                  # Language setting
+      ```
+    - Optionally, set `NEXT_PUBLIC_BASE_PATH` if the app is hosted under a subpath.
+    - Database connection details (used by all database-related features) are configured in `src/lib/database.ts`.
+3.  **Start Development Server**:
+    ```bash
+    pnpm dev
+    ```
+    This starts the Next.js development server, typically on `http://localhost:3000`.
+4.  **Access Application**:
+    Navigate to `http://localhost:3000` to view the main dashboard. From there, you can access:
+    - Indoor Vector Surveillance: `http://localhost:3000/indoor-surveillance`
+    - Maps Dashboard: `http://localhost:3000/maps`
+    - Supervision Dashboard: `http://localhost:3000/supervision-dashboard/details`
+
+### Production Build
+
+1.  **Build the Application**:
+    ```bash
+    pnpm build
+    ```
+2.  **Start Production Server**:
+    ```bash
+    pnpm start
+    ```
+    This command starts the server on port `4000` as defined in `package.json`.
+
+### Linting
+
+Run the linter with:
+```bash
+pnpm lint
+```
+
+## Development Conventions
+
+- **Architecture**: Follows the Next.js 15 App Router structure with `src/app` for routes, `src/components` for UI components, `src/types` for TypeScript definitions, `src/utils` for helper functions, and `src/lib` for database queries and API integrations.
+- **Data Fetching**:
+  - Server-only routes (`src/app/api/*`) are used for external API calls (like KoboToolbox) and database queries to protect sensitive data and encapsulate business logic.
+  - Pages use `fetch` with appropriate caching strategies (`cache: 'no-store'` for dynamic data) to ensure fresh data is displayed when needed.
+- **Type Safety**: Strong emphasis on TypeScript types for all data structures, API responses, and component props.
+- **UI Components**: Built with React and Tailwind CSS for a responsive and styled interface. Components are modular and reusable.
+- **Utilities**: Parsing, data analysis, and utility functions are encapsulated in `src/utils/`. Database queries are in `src/lib/`.
+- **Performance**: The indoor surveillance page implements local filtering and memoization to optimize performance. The maps dashboard uses caching for API responses.
