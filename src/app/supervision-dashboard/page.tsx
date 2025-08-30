@@ -260,21 +260,35 @@ export default function SupervisionDashboardPage() {
 
       if (location && location.lat && location.lng) {
         const activity: SurveillanceActivity = {
+          // Required new fields
+          id: parseInt(submission._id?.toString() || "0"),
+          activity_id: submission._id?.toString() || "",
+          name_of_family_head: submission["group_general/supervisor_cnic"] || "Supervision Visit",
+          shop_house: "",
+          address: submission["group_general_001/group_ln8pu96/area_address"] || "",
+          locality: "",
+          district: submission["group_general/town"] || "",
+          town: submission["group_general/town"] || "",
+          uc: submission["group_general/uc"] || "",
+          report_type: "supervision",
+          submitted_by: submission._submitted_by || "",
+          activity_datetime: submission._submission_time || submission.start || "",
+          picture_url: "",
+          latitude: location.lat,
+          longitude: location.lng,
+          // Legacy field mappings for backward compatibility
           Sr_No: submission._id?.toString() || "",
           Activity_ID: submission._id?.toString() || "",
-          Name_of_Family_Head:
-            submission["group_general/supervisor_cnic"] || "Supervision Visit",
+          Name_of_Family_Head: submission["group_general/supervisor_cnic"] || "Supervision Visit",
           Shop_House: "",
-          Address:
-            submission["group_general_001/group_ln8pu96/area_address"] || "",
+          Address: submission["group_general_001/group_ln8pu96/area_address"] || "",
           Locality: "",
           District: submission["group_general/town"] || "",
           Town: submission["group_general/town"] || "",
           UC: submission["group_general/uc"] || "",
           Tag: "Supervision Visit",
           Submitted_by: submission._submitted_by || "",
-          Activity_DateTime:
-            submission._submission_time || submission.start || "",
+          Activity_DateTime: submission._submission_time || submission.start || "",
           Picture: "",
           Latitude: location.lat,
           Longitude: location.lng,

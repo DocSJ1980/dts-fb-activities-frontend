@@ -49,6 +49,25 @@ function toActivities(submission: KoboResult): SurveillanceActivity[] {
 
     // Map to existing SurveillanceActivity shape defined in src/types/surveillance.ts
     const act: SurveillanceActivity = {
+      // New required fields
+      id: Date.now() + idx, // Generate a unique numeric ID
+      activity_id: `${submission._id}-${idx}`,
+      name_of_family_head: title,
+      shop_house: "",
+      address: submission["group_general_001/group_ln8pu96/area_address"] ?? "",
+      locality: "",
+      district: submission["group_general/town"] ?? "",
+      town: submission["group_general/town"] ?? "",
+      uc: submission["group_general/uc"] ?? "",
+      report_type: [code ? `Code:${code}` : null, phone ? `Phone:${phone}` : null]
+        .filter(Boolean)
+        .join(" "),
+      submitted_by: submission._submitted_by ?? "",
+      activity_datetime: submission._submission_time ?? submission.start ?? "",
+      picture_url: "",
+      latitude: loc.lat,
+      longitude: loc.lng,
+      // Legacy fields for backward compatibility
       Sr_No: `${submission._id}-${idx}`,
       Activity_ID: `${submission._id}-${idx}`,
       Name_of_Family_Head: title,

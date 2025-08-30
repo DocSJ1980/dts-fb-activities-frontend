@@ -5,7 +5,7 @@ import Image from "next/image";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { SurveillanceActivity } from "@/types/surveillance";
+import { SurveillanceActivity, ContainerData } from "@/types/surveillance";
 import { DEFAULT_MAP_CENTER, MAP_ZOOM_LEVELS } from "@/utils/constants";
 
 // Fix for default markers in react-leaflet
@@ -39,23 +39,6 @@ const createCustomIcon = (color: string) => {
   });
 };
 
-const getMarkerColor = (tag: string) => {
-  switch (tag.toLowerCase()) {
-    case "house visit":
-      return "#3b82f6"; // blue
-    case "shop visit":
-      return "#10b981"; // green
-    case "container check":
-      return "#f59e0b"; // amber
-    case "breeding site":
-      return "#ef4444"; // red
-    case "treatment":
-      return "#8b5cf6"; // purple
-    default:
-      return "#3b82f6"; // gray
-  }
-};
-
 interface MapUpdaterProps {
   activities: SurveillanceActivity[];
 }
@@ -66,9 +49,20 @@ function MapUpdater({ activities }: MapUpdaterProps) {
   useEffect(() => {
     if (activities.length > 0) {
       const bounds = L.latLngBounds(
-        activities.map((activity) => [activity.Latitude, activity.Longitude])
+        activities
+          .filter(activity => {
+            const lat = activity.latitude ?? activity.Latitude;
+            const lng = activity.longitude ?? activity.Longitude;
+            return lat !== undefined && lng !== undefined;
+          })
+          .map((activity) => [
+            activity.latitude ?? activity.Latitude!,
+            activity.longitude ?? activity.Longitude!
+          ])
       );
-      map.fitBounds(bounds, { padding: [20, 20] });
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [20, 20] });
+      }
     }
   }, [activities, map]);
 
@@ -77,16 +71,28 @@ function MapUpdater({ activities }: MapUpdaterProps) {
 
 interface SurveillanceMapProps {
   activities: SurveillanceActivity[];
+  containerData?: ContainerData[];
   showWrapper?: boolean;
   title?: string;
 }
 
 export default function SurveillanceMap({
   activities,
+  containerData = [],
   showWrapper = true,
   title = "Activity Locations",
 }: SurveillanceMapProps) {
   const [isClient, setIsClient] = useState(false);
+
+  // Function to check if an activity has positive containers
+  const hasPositiveContainers = (activityId: string) => {
+    const activityContainers = containerData.filter(
+      container => (container.activity_id || container.Activity_ID) === activityId
+    );
+    return activityContainers.some(container => 
+      (container.positive ?? container.Positive ?? 0) > 0
+    );
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -106,7 +112,10 @@ export default function SurveillanceMap({
   // Calculate center point from activities
   const center =
     activities.length > 0
-      ? ([activities[0].Latitude, activities[0].Longitude] as [number, number])
+      ? ([
+          activities[0].latitude ?? activities[0].Latitude ?? DEFAULT_MAP_CENTER[0],
+          activities[0].longitude ?? activities[0].Longitude ?? DEFAULT_MAP_CENTER[1]
+        ] as [number, number])
       : DEFAULT_MAP_CENTER;
 
   const mapContent = (
@@ -122,70 +131,92 @@ export default function SurveillanceMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <MapUpdater activities={activities} />
-        {activities.map((activity) => (
-          <Marker
-            key={activity.Activity_ID}
-            position={[activity.Latitude, activity.Longitude]}
-            icon={createCustomIcon(getMarkerColor(activity.Tag))}
-          >
-            <Popup>
-              <div className="min-w-64">
-                <div className="font-semibold text-lg mb-2">
-                  {activity.Name_of_Family_Head}
+        {activities.map((activity) => {
+          const activityId = activity.activity_id || activity.Activity_ID || '';
+          const latitude = activity.latitude ?? activity.Latitude ?? 0;
+          const longitude = activity.longitude ?? activity.Longitude ?? 0;
+          const tag = activity.report_type || activity.Tag || '';
+          const familyHead = activity.name_of_family_head || activity.Name_of_Family_Head || '';
+          const address = activity.address || activity.Address || '';
+          const town = activity.town || activity.Town || '';
+          const uc = activity.uc || activity.UC || '';
+          const submittedBy = activity.submitted_by || activity.Submitted_by || '';
+          const activityDateTime = activity.activity_datetime || activity.Activity_DateTime || '';
+          const picture = activity.picture_url || activity.Picture;
+          
+          // Skip if no coordinates
+          if (!latitude || !longitude) {
+            return null;
+          }
+          
+          // Determine marker color based on positive containers
+          const markerColor = hasPositiveContainers(activityId) ? "#ef4444" : "#3b82f6"; // red for positive, blue for normal
+          
+          return (
+            <Marker
+              key={activityId}
+              position={[latitude, longitude]}
+              icon={createCustomIcon(markerColor)}
+            >
+              <Popup>
+                <div className="min-w-64">
+                  <div className="font-semibold text-lg mb-2">
+                    {familyHead}
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div>
+                      <strong>Address:</strong> {address}
+                    </div>
+                    <div>
+                      <strong>Location:</strong> {town}, {uc}
+                    </div>
+                    <div>
+                      <strong>Coordinates:</strong> {latitude.toFixed(6)}
+                      , {longitude.toFixed(6)}
+                    </div>
+                    <div>
+                      <span
+                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                          tag.toLowerCase().includes("positive")
+                            ? "bg-red-100 text-red-800"
+                            : tag.toLowerCase().includes("negative")
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {tag}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Submitted by:</strong> {submittedBy}
+                    </div>
+                    <div>
+                      <strong>Date & Time:</strong>{" "}
+                      {activityDateTime ? new Date(activityDateTime).toLocaleString() : 'N/A'}
+                    </div>
+                    <div>
+                      <strong>Activity ID:</strong> {activityId}
+                    </div>
+                  </div>
+                  {picture && (
+                    <div className="mt-3">
+                      <Image
+                        src={picture}
+                        alt="Activity"
+                        width={200}
+                        height={128}
+                        className="w-full rounded-lg max-h-32 object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1 text-sm">
-                  <div>
-                    <strong>Address:</strong> {activity.Address}
-                  </div>
-                  <div>
-                    <strong>Location:</strong> {activity.Town}, {activity.UC}
-                  </div>
-                  <div>
-                    <strong>Coordinates:</strong> {activity.Latitude.toFixed(6)}
-                    , {activity.Longitude.toFixed(6)}
-                  </div>
-                  <div>
-                    <span
-                      className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        activity.Tag.toLowerCase().includes("positive")
-                          ? "bg-red-100 text-red-800"
-                          : activity.Tag.toLowerCase().includes("negative")
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {activity.Tag}
-                    </span>
-                  </div>
-                  <div>
-                    <strong>Submitted by:</strong> {activity.Submitted_by}
-                  </div>
-                  <div>
-                    <strong>Date & Time:</strong>{" "}
-                    {new Date(activity.Activity_DateTime).toLocaleString()}
-                  </div>
-                  <div>
-                    <strong>Activity ID:</strong> {activity.Activity_ID}
-                  </div>
-                </div>
-                {activity.Picture && (
-                  <div className="mt-3">
-                    <Image
-                      src={activity.Picture}
-                      alt="Activity"
-                      width={200}
-                      height={128}
-                      className="w-full rounded-lg max-h-32 object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+              </Popup>
+            </Marker>
+          );
+        }).filter(Boolean)}
       </MapContainer>
     </div>
   );
@@ -205,28 +236,16 @@ export default function SurveillanceMap({
       </div>
 
       {/* Legend */}
-      {/* <div className="mb-4 flex flex-wrap gap-4 text-sm">
+      <div className="mb-4 flex flex-wrap gap-4 text-sm">
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-          <span>House Visit</span>
+          <div className="w-4 h-4 rounded-full bg-red-500 border border-gray-300"></div>
+          <span>Activities with Positive Containers</span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-green-500"></div>
-          <span>Shop Visit</span>
+          <div className="w-4 h-4 rounded-full bg-blue-500 border border-gray-300"></div>
+          <span>Normal Activities</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-amber-500"></div>
-          <span>Container Check</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-red-500"></div>
-          <span>Breeding Site</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 rounded-full bg-purple-500"></div>
-          <span>Treatment</span>
-        </div>
-      </div> */}
+      </div>
 
       <div className="h-96 md:h-[32rem] lg:h-[36rem]">{mapContent}</div>
     </div>

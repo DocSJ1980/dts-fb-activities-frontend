@@ -24,19 +24,29 @@ export default function SurveillanceFeed({
     const sorted = [...activities].sort((a, b) => {
       switch (sortBy) {
         case "newest":
+          const aDateTime = a.activity_datetime || a.Activity_DateTime || '';
+          const bDateTime = b.activity_datetime || b.Activity_DateTime || '';
           return (
-            new Date(b.Activity_DateTime).getTime() -
-            new Date(a.Activity_DateTime).getTime()
+            new Date(bDateTime).getTime() -
+            new Date(aDateTime).getTime()
           );
         case "oldest":
+          const aDateTimeOld = a.activity_datetime || a.Activity_DateTime || '';
+          const bDateTimeOld = b.activity_datetime || b.Activity_DateTime || '';
           return (
-            new Date(a.Activity_DateTime).getTime() -
-            new Date(b.Activity_DateTime).getTime()
+            new Date(aDateTimeOld).getTime() -
+            new Date(bDateTimeOld).getTime()
           );
         case "location":
-          return a.Town.localeCompare(b.Town) || a.UC.localeCompare(b.UC);
+          const aTown = a.town || a.Town || '';
+          const bTown = b.town || b.Town || '';
+          const aUC = a.uc || a.UC || '';
+          const bUC = b.uc || b.UC || '';
+          return aTown.localeCompare(bTown) || aUC.localeCompare(bUC);
         case "submitter":
-          return a.Submitted_by.localeCompare(b.Submitted_by);
+          const aSubmitter = a.submitted_by || a.Submitted_by || '';
+          const bSubmitter = b.submitted_by || b.Submitted_by || '';
+          return aSubmitter.localeCompare(bSubmitter);
         default:
           return 0;
       }
@@ -129,15 +139,18 @@ export default function SurveillanceFeed({
         </div>
       ) : (
         <div className="space-y-6">
-          {sortedActivities.map((activity) => (
-            <PostCard
-              key={activity.Activity_ID}
-              activity={activity}
-              containerData={containerData.filter(
-                (container) => container.Activity_ID === activity.Activity_ID
-              )}
-            />
-          ))}
+          {sortedActivities.map((activity) => {
+            const activityId = activity.activity_id || activity.Activity_ID;
+            return (
+              <PostCard
+                key={activityId}
+                activity={activity}
+                containerData={containerData.filter(
+                  (container) => (container.activity_id || container.Activity_ID) === activityId
+                )}
+              />
+            );
+          })}
         </div>
       )}
 

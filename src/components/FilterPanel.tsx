@@ -156,7 +156,7 @@ FilterPanelProps) {
               value: town.town_code,
               label: town.town_name,
             }))}
-            value={filters.townCode}
+            value={typeof filters.townCode === 'string' ? parseInt(filters.townCode) : filters.townCode}
             onChange={handleTownChange}
             placeholder="Select Town (Required)"
             loading={loadingTowns}
@@ -174,7 +174,7 @@ FilterPanelProps) {
               value: uc.uc_code,
               label: uc.uc_name,
             }))}
-            value={filters.ucCode}
+            value={typeof filters.ucCode === 'string' ? parseInt(filters.ucCode) : filters.ucCode}
             onChange={handleUCChange}
             placeholder="Select UC (Required)"
             loading={loadingUCs}

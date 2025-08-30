@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { SurveillanceActivity } from "@/types/surveillance";
+import { SurveillanceActivity, ContainerData } from "@/types/surveillance";
 
 // Create a loading component that accepts title
 const createLoadingComponent = (title: string) => {
@@ -20,11 +20,13 @@ const createLoadingComponent = (title: string) => {
 
 interface DynamicSurveillanceMapProps {
   activities: SurveillanceActivity[];
+  containerData?: ContainerData[];
   title?: string;
 }
 
 export default function DynamicSurveillanceMap({
   activities,
+  containerData = [],
   title = "Activity Locations",
 }: DynamicSurveillanceMapProps) {
   // Create a dynamic component with the specific title for loading state
@@ -33,5 +35,5 @@ export default function DynamicSurveillanceMap({
     loading: createLoadingComponent(title),
   });
 
-  return <DynamicMapWithTitle activities={activities} title={title} />;
+  return <DynamicMapWithTitle activities={activities} containerData={containerData} title={title} />;
 }

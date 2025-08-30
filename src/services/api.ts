@@ -2,13 +2,11 @@ import axios from "axios";
 import {
   Town,
   UC,
-  ContainerData,
   SurveillanceFilters,
   SurveillanceResponse,
 } from "@/types/surveillance";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE_URL = "/api/indoor-surveillance";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -55,7 +53,7 @@ export const surveillanceApi = {
   // Get all towns
   getTowns: async (): Promise<Town[]> => {
     try {
-      const response = await api.get("/towns");
+      const response = await api.get("?endpoint=towns");
       return response.data;
     } catch (error: unknown) {
       const err = error as Error & {
@@ -72,9 +70,9 @@ export const surveillanceApi = {
   },
 
   // Get UCs for a specific town
-  getUCs: async (townCode: number): Promise<UC[]> => {
+  getUCs: async (townId: number | string): Promise<UC[]> => {
     try {
-      const response = await api.get(`/towns/${townCode}/ucs`);
+      const response = await api.get(`?endpoint=ucs&town_id=${townId}`);
       return response.data;
     } catch (error: unknown) {
       const err = error as Error & {
@@ -95,31 +93,23 @@ export const surveillanceApi = {
     filters: SurveillanceFilters
   ): Promise<SurveillanceResponse> => {
     try {
-      // According to the API spec, all three parameters are required
-      if (!filters.townCode || !filters.ucCode) {
-        console.warn(
-          "Town code and UC code are required for surveillance data"
-        );
-        return {
-          combined_data: [],
-          container_data: [],
-          users: [],
-          total_records: 0,
-        };
+      // Build query parameters
+      const params = new URLSearchParams({
+        endpoint: "surveillance-data",
+        date: filters.date,
+      });
+
+      if (filters.townCode) {
+        params.append("town_code", filters.townCode.toString());
       }
 
-      const params = {
-        date: filters.date,
-        town_code: filters.townCode,
-        uc_code: filters.ucCode,
-      };
+      if (filters.ucCode) {
+        params.append("uc_code", filters.ucCode.toString());
+      }
 
-      console.log("Sending request with params:", params);
+      console.log("Sending request with params:", params.toString());
 
-      const response = await api.get<SurveillanceResponse>(
-        "/surveillance-data",
-        { params }
-      );
+      const response = await api.get<SurveillanceResponse>(`?${params.toString()}`);
       console.log("API Response:", response.data);
 
       // Return the full response
@@ -137,8 +127,8 @@ export const surveillanceApi = {
       });
 
       // Return empty response instead of throwing to prevent app crash
-      if (err.response?.status === 422) {
-        console.warn("API returned 422 - returning empty response");
+      if (err.response?.status === 422 || err.response?.status === 400) {
+        console.warn("API returned error - returning empty response");
         return {
           combined_data: [],
           container_data: [],
@@ -147,19 +137,6 @@ export const surveillanceApi = {
         };
       }
 
-      throw error;
-    }
-  },
-
-  // Get container data for a specific activity
-  getContainerData: async (activityId: string): Promise<ContainerData[]> => {
-    try {
-      const response = await api.get(
-        `/surveillance-data/${activityId}/containers`
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching container data:", error);
       throw error;
     }
   },
