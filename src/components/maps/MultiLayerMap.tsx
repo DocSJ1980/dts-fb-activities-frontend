@@ -337,25 +337,40 @@ function LayerRenderer({
             {patientCircleMarkers.map((marker) => {
               const patientPlaceColor = getPatientPlaceColor(marker.popupData.patient_place as string);
               return (
-                <Circle
-                  key={`patient-${marker.id}`}
-                  center={[marker.latitude, marker.longitude]}
-                  radius={500}
-                  pathOptions={{
-                    color: '#000',
-                    fillColor: patientPlaceColor,
-                    fillOpacity: 0.2,
-                    weight: 2,
-                  }}
-                >
-                  <Popup>
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: formatPopupContent(marker),
-                      }}
-                    />
-                  </Popup>
-                </Circle>
+                <div key={`patient-${marker.id}`}>
+                  {/* 500m radius circle */}
+                  <Circle
+                    center={[marker.latitude, marker.longitude]}
+                    radius={500}
+                    pathOptions={{
+                      color: '#000',
+                      fillColor: patientPlaceColor,
+                      fillOpacity: 0.2,
+                      weight: 2,
+                    }}
+                  >
+                    <Popup>
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: formatPopupContent(marker),
+                        }}
+                      />
+                    </Popup>
+                  </Circle>
+                  {/* Small center marker to show patient house location */}
+                  <Marker
+                    position={[marker.latitude, marker.longitude]}
+                    icon={createDotIcon(patientPlaceColor)}
+                  >
+                    <Popup>
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: formatPopupContent(marker),
+                        }}
+                      />
+                    </Popup>
+                  </Marker>
+                </div>
               );
             })}
 
@@ -437,89 +452,119 @@ export default function MultiLayerMap({
   }, {} as Record<string, MapMarker[]>);
 
   return (
-    <div className={`flex flex-col ${
-      isFullScreen 
-        ? 'fixed inset-0 z-[9999] bg-white' 
-        : 'h-full'
-    }`}>
-      {/* Map Header */}
-      <div className="p-4 bg-white border-b border-gray-200">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-600">
-              {visibleMarkers.length} markers visible
-            </div>
-            <button
-              onClick={toggleFullScreen}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm transition-colors"
-              title={isFullScreen ? 'Exit Full Screen' : 'Enter Full Screen'}
-            >
-              {isFullScreen ? (
-                <>
-                  <Minimize className="w-4 h-4" />
-                  <span>Exit Full Screen</span>
-                </>
-              ) : (
-                <>
+    <>
+      {isFullScreen ? (
+        // True Full Screen Mode - Only map with floating exit button
+        <div className="fixed inset-0 z-[9999] bg-white">
+          <MapContainer
+            center={
+              visibleMarkers.length > 0
+                ? [visibleMarkers[0].latitude, visibleMarkers[0].longitude]
+                : DEFAULT_MAP_CENTER
+            }
+            zoom={MAP_ZOOM_LEVELS.DEFAULT}
+            style={{ height: "100%", width: "100%" }}
+            className="z-0"
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+
+            <MapBoundsUpdater markers={visibleMarkers} />
+
+            {/* Render markers by layer with user-controlled clustering */}
+            <LayerRenderer
+              markersByLayer={markersByLayer}
+              layerColors={layerColors}
+              layerSettings={layerSettings}
+            />
+          </MapContainer>
+
+          {/* Floating Exit Full Screen Button */}
+          <button
+            onClick={toggleFullScreen}
+            className="absolute top-4 right-4 z-[1000] flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-black bg-opacity-70 rounded-md hover:bg-opacity-90 shadow-lg transition-all backdrop-blur-sm"
+            title="Exit Full Screen"
+          >
+            <Minimize className="w-4 h-4" />
+            <span>Exit Full Screen</span>
+          </button>
+        </div>
+      ) : (
+        // Normal Mode - With header and controls
+        <div className="h-full flex flex-col">
+          {/* Map Header */}
+          <div className="p-4 bg-white border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-gray-600">
+                  {visibleMarkers.length} markers visible
+                </div>
+                <button
+                  onClick={toggleFullScreen}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm transition-colors"
+                  title="Enter Full Screen"
+                >
                   <Maximize className="w-4 h-4" />
                   <span>Full Screen</span>
-                </>
-              )}
-            </button>
+                </button>
+              </div>
+            </div>
+
+            {/* Layer Legend */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(layerNames).map(([layerId, name]) => (
+                <button
+                  key={layerId}
+                  onClick={() => onLayerToggle(layerId)}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm border transition-colors ${
+                    enabledLayers.has(layerId)
+                      ? "bg-white border-gray-300 text-gray-700"
+                      : "bg-gray-100 border-gray-200 text-gray-500"
+                  }`}
+                >
+                  <div
+                    className="w-3 h-3 rounded-full border border-white"
+                    style={{ backgroundColor: layerColors[layerId] }}
+                  />
+                  <span>{name}</span>
+                  <span className="text-xs">({layerCounts[layerId] || 0})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Map Container */}
+          <div className="flex-1 relative">
+            <MapContainer
+              center={
+                visibleMarkers.length > 0
+                  ? [visibleMarkers[0].latitude, visibleMarkers[0].longitude]
+                  : DEFAULT_MAP_CENTER
+              }
+              zoom={MAP_ZOOM_LEVELS.DEFAULT}
+              style={{ height: "100%", width: "100%" }}
+              className="z-0"
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+
+              <MapBoundsUpdater markers={visibleMarkers} />
+
+              {/* Render markers by layer with user-controlled clustering */}
+              <LayerRenderer
+                markersByLayer={markersByLayer}
+                layerColors={layerColors}
+                layerSettings={layerSettings}
+              />
+            </MapContainer>
           </div>
         </div>
-
-        {/* Layer Legend */}
-        <div className="mt-3 flex flex-wrap gap-2">
-          {Object.entries(layerNames).map(([layerId, name]) => (
-            <button
-              key={layerId}
-              onClick={() => onLayerToggle(layerId)}
-              className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm border transition-colors ${
-                enabledLayers.has(layerId)
-                  ? "bg-white border-gray-300 text-gray-700"
-                  : "bg-gray-100 border-gray-200 text-gray-500"
-              }`}
-            >
-              <div
-                className="w-3 h-3 rounded-full border border-white"
-                style={{ backgroundColor: layerColors[layerId] }}
-              />
-              <span>{name}</span>
-              <span className="text-xs">({layerCounts[layerId] || 0})</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Map Container */}
-      <div className="flex-1 relative">
-        <MapContainer
-          center={
-            visibleMarkers.length > 0
-              ? [visibleMarkers[0].latitude, visibleMarkers[0].longitude]
-              : DEFAULT_MAP_CENTER
-          }
-          zoom={MAP_ZOOM_LEVELS.DEFAULT}
-          style={{ height: "100%", width: "100%" }}
-          className="z-0"
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-
-          <MapBoundsUpdater markers={visibleMarkers} />
-
-          {/* Render markers by layer with user-controlled clustering */}
-          <LayerRenderer
-            markersByLayer={markersByLayer}
-            layerColors={layerColors}
-            layerSettings={layerSettings}
-          />
-        </MapContainer>
-      </div>
-    </div>
+      )}
+    </>
   );
 }

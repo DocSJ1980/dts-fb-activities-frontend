@@ -45,7 +45,9 @@ This is a Next.js 15 application designed to serve as a frontend for visualizing
       - 🔵 **Blue circles** for `patient_place = 'workplace'`
       - 🟣 **Purple circles** for `patient_place = 'permanent'`
       - All circles feature black borders for better visibility and are never clustered
+      - **Center Markers**: Small center markers display the exact patient house location within each circle
     - **Enhanced Marker Display**: Dot markers are larger (16x16px) with black borders for improved visibility
+    - **Full Screen Mode**: True full screen toggle button provides F11-style experience with only map and floating exit button
     - Uses a server-side API route (`/api/maps/data`) to fetch map marker data based on selected filters.
     - Implements caching for map data to improve performance.
 
@@ -227,6 +229,7 @@ The comprehensive maps dashboard provides sophisticated visualization tools:
 
 #### Patient Activity Specialization
 - **Circle Visualization**: 500m diameter circles for `tag_name = 'Patient'` activities
+- **Center Markers**: Small dot markers show exact patient house locations within the coverage circles
 - **Location-Based Coloring**:
   - Red: `patient_place = 'residence'`
   - Blue: `patient_place = 'workplace'`
@@ -234,6 +237,7 @@ The comprehensive maps dashboard provides sophisticated visualization tools:
   - Gray: Unknown/empty values
 - **Visual Enhancements**: Black borders, semi-transparent fills, non-clustered display
 - **Interactive Features**: Detailed popups with patient place information
+- **Full Screen Experience**: True full screen mode covering entire viewport with floating exit control
 
 #### Performance Optimizations
 - **Data Caching**: Strategic caching for map data to reduce server load
