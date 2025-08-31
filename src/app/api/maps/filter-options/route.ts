@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // Define available filter fields for each table
     const tableFields: Record<TableName, string[]> = {
       [TableName.DENGUE_SIMPLE_ACTIVITIES]: ['tag', 'dengue_larvae', 'district', 'town', 'submitted_by'],
-      [TableName.DTS_PATIENT_ACTIVITIES]: ['tag_name', 'category_name', 'district', 'town', 'submitted_by'],
+      [TableName.DTS_PATIENT_ACTIVITIES]: ['tag_name', 'category_name', 'patient_place', 'district', 'town', 'submitted_by'],
       [TableName.DTS_SURV_ACTIVITIES]: ['report_type', 'district', 'town', 'submitted_by'],
       [TableName.DTS_CONTAINERS]: ['container_tag'],
       [TableName.DTS_CASE_RESPONSE_ACTIVITIES]: ['larva_source', 'district', 'town', 'submitted_by'],

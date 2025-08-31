@@ -24,6 +24,7 @@ export interface DtsPatientActivity {
   patient_name: string;
   category_name: string;
   tag_name: string;
+  patient_place: string;
   submitted_by: string;
 }
 

@@ -547,6 +547,7 @@ function TableSpecificFilters({
       return (
         <div className="space-y-3">
           <div>
+            <div className="text-xs font-medium text-gray-700 mb-2">Tag Name</div>
             <div className="space-y-1">
               <label className="flex items-center">
                 <input
@@ -579,6 +580,59 @@ function TableSpecificFilters({
                   value=""
                   checked={!filters.tag_name}
                   onChange={() => updateFilter("tag_name", "")}
+                  disabled={disabled}
+                  className="mr-2"
+                />
+                <span className="text-xs text-gray-900">All</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <div className="text-xs font-medium text-gray-700 mb-2">Patient Place</div>
+            <div className="space-y-1">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name={`patient_place_${layerId}`}
+                  value="residence"
+                  checked={filters.patient_place === "residence"}
+                  onChange={(e) => updateFilter("patient_place", e.target.value)}
+                  disabled={disabled}
+                  className="mr-2"
+                />
+                <span className="text-xs text-gray-900">🔴 Residence</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name={`patient_place_${layerId}`}
+                  value="workplace"
+                  checked={filters.patient_place === "workplace"}
+                  onChange={(e) => updateFilter("patient_place", e.target.value)}
+                  disabled={disabled}
+                  className="mr-2"
+                />
+                <span className="text-xs text-gray-900">🔵 Workplace</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name={`patient_place_${layerId}`}
+                  value="permanent"
+                  checked={filters.patient_place === "permanent"}
+                  onChange={(e) => updateFilter("patient_place", e.target.value)}
+                  disabled={disabled}
+                  className="mr-2"
+                />
+                <span className="text-xs text-gray-900">🟣 Permanent</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name={`patient_place_${layerId}`}
+                  value=""
+                  checked={!filters.patient_place}
+                  onChange={() => updateFilter("patient_place", "")}
                   disabled={disabled}
                   className="mr-2"
                 />

@@ -1,6 +1,6 @@
 # Project Context for dts-fb-activities-frontend
 
-This document provides an overview of the `dts-fb-activities-frontend` project for use in future interactions and development tasks.
+This document provides a comprehensive overview of the `dts-fb-activities-frontend` project for development and maintenance tasks.
 
 ## Project Overview
 
@@ -25,85 +25,234 @@ This is a Next.js 15 application designed to serve as a frontend for visualizing
     - Calculates and displays summary statistics (houses checked, houses positive, containers checked, containers positive).
     - Uses a server-side API route (`/api/indoor-surveillance`) to fetch data from the database with efficient filtering.
 
-3.  **Comprehensive Maps Dashboard** (`/maps`)
+3.  **Outdoor Vector Surveillance** (`/outdoor-surveillance`)
+    - Displays outdoor surveillance activities performed by male staff based on data fetched from the local PostgreSQL database.
+    - Identical functionality to indoor surveillance but filters activities with `report_type = 'outdoor'`.
+    - Features the same filtering capabilities by date, town, and union council (UC).
+    - Shows field worker performance cards specific to outdoor activities.
+    - Implements the same map view and feed view components for outdoor activity visualization.
+    - Calculates and displays the same summary statistics for outdoor activities.
+    - Uses a dedicated server-side API route (`/api/outdoor-surveillance`) to fetch outdoor-specific data.
+    - Uses orange-themed branding (🌿 icon) to distinguish from indoor surveillance (🦟 blue theme).
+
+4.  **Comprehensive Maps Dashboard** (`/maps`)
     - Offers a multi-layer map visualization for all types of dengue activities.
     - Allows users to select multiple Union Councils (UCs) and enable/disable different data layers.
     - Supports various activity types including simple dengue activities, patient activities, surveillance activities, container data, case response activities, and TPV activities.
     - Configurable layer settings (color, clustering, dots display).
+    - **Advanced Patient Activity Visualization**: Patient Activities with `tag_name = 'Patient'` are displayed as special 500m diameter circles with color-coded visualization:
+      - 🔴 **Red circles** for `patient_place = 'residence'`
+      - 🔵 **Blue circles** for `patient_place = 'workplace'`
+      - 🟣 **Purple circles** for `patient_place = 'permanent'`
+      - All circles feature black borders for better visibility and are never clustered
+    - **Enhanced Marker Display**: Dot markers are larger (16x16px) with black borders for improved visibility
     - Uses a server-side API route (`/api/maps/data`) to fetch map marker data based on selected filters.
     - Implements caching for map data to improve performance.
 
-### Main Technologies
+## Architecture and Technical Implementation
 
+### Technology Stack
 - **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
+- **Language**: TypeScript with strict type checking
 - **Styling**: Tailwind CSS
-- **UI Components**: React, with custom components for cards, maps, feeds, and filters.
-- **Data Fetching**: `fetch` API (both server-side in routes and client-side).
+- **UI Components**: React, with custom components for cards, maps, feeds, and filters
+- **Data Fetching**: `fetch` API (both server-side in routes and client-side)
 - **Database**: PostgreSQL (accessed via server-side API routes)
-- **Mapping**: Leaflet.js with React Leaflet for map visualizations.
-- **Dependencies**: Key libraries include `next`, `react`, `react-dom`, `tailwindcss`, `lucide-react` for icons, `leaflet` and `react-leaflet` for maps, and `axios` for API calls.
+- **Mapping**: Leaflet.js with React Leaflet for map visualizations
+- **Dependencies**: Key libraries include `next`, `react`, `react-dom`, `tailwindcss`, `lucide-react` for icons, `leaflet` and `react-leaflet` for maps, and `axios` for API calls
 
-## Building and Running
+### System Architecture
+- **Architecture Pattern**: Next.js App Router with Server Components and API Routes
+- **Design Patterns**: Server Component pattern for data fetching, API Route pattern for backend integration, Component-based UI architecture
+- **Data Flow**: Client components request data from server API route → Server route fetches from database/KoboToolbox → Data is rendered in UI components
+- **Security**: Environment variable abstraction for secure credentials, server-only API routes
+
+### Database Schema
+The application integrates with several key database tables:
+- **`dts_surv_activities`**: Core surveillance activities table with `activity_id` foreign key
+- **`dts_containers`**: Container data linked via `activity_id`
+- **`dts_patient_activities`**: Patient activity records with location and place information
+- **`employee_data`**: Staff information with dual username matching support
+- **`town_data` and `uc_data`**: Geographic hierarchy with foreign key relationships
+
+### Key Technical Features
+
+#### Map Visualization System
+- **Multi-layer Support**: Handles 6 different activity types with independent layer controls
+- **Smart Clustering**: Configurable marker clustering with custom styling
+- **Enhanced Patient Visualization**: 500m radius circles for patient activities with location-based color coding
+- **Performance Optimization**: Efficient data fetching with caching mechanisms
+- **Interactive Elements**: Popups, filtering, and real-time layer toggling
+
+#### Data Processing and Filtering
+- **Local vs Server Filtering**: Optimized strategy using local filtering for performance-critical operations
+- **Smart UC Filtering**: Database-level filtering using EXISTS subqueries across multiple UC name formats
+- **Employee Integration**: Dual username matching with activity type-based name formatting
+- **Coordinate Handling**: All tables contain proper coordinate columns with fallback mechanisms
+
+#### User Interface Design
+- **Responsive Design**: Tailwind CSS with mobile-first approach
+- **Consistent Theming**: Color-coded sections (blue for indoor, orange for outdoor)
+- **Interactive Dashboards**: Real-time filtering, sorting, and data visualization
+- **Performance Cards**: Field worker performance metrics with contact information
+
+## Development Setup and Operations
 
 ### Prerequisites
-
 - Node.js (version compatible with Next.js 15)
 - pnpm package manager
+- PostgreSQL database
+- TypeScript v5
 
-### Setup and Development
+### Environment Configuration
+1. **Install Dependencies**:
+   ```bash
+   pnpm install
+   ```
 
-1.  **Install Dependencies**:
-    ```bash
-    pnpm install
-    ```
-2.  **Environment Configuration**:
-    - For KoboToolbox integration (used by Supervision Dashboard), create a `.env.local` file in the project root and add the following variables:
-      ```bash
-      KFKOBO_BASE_URL=https://kf.mydomain.com # Your KoboToolbox instance URL
-      KFKOBO_ASSET_ID=my_form_id             # Your KoboToolbox form asset ID
-      KFKOBO_TOKEN=Token my_kobo_token       # Your KoboToolbox API token (including the 'Token ' prefix)
-      KFKOBO_DJANGO_LANG=en                  # Language setting
-      ```
-    - Optionally, set `NEXT_PUBLIC_BASE_PATH` if the app is hosted under a subpath.
-    - Database connection details (used by all database-related features) are configured in `src/lib/database.ts`.
-3.  **Start Development Server**:
-    ```bash
-    pnpm dev
-    ```
-    This starts the Next.js development server, typically on `http://localhost:3000`.
-4.  **Access Application**:
-    Navigate to `http://localhost:3000` to view the main dashboard. From there, you can access:
-    - Indoor Vector Surveillance: `http://localhost:3000/indoor-surveillance`
-    - Maps Dashboard: `http://localhost:3000/maps`
-    - Supervision Dashboard: `http://localhost:3000/supervision-dashboard/details`
+2. **Environment Variables**:
+   Create a `.env.local` file in the project root:
+   ```bash
+   # KoboToolbox Integration (for Supervision Dashboard)
+   KFKOBO_BASE_URL=https://kf.mydomain.com
+   KFKOBO_ASSET_ID=my_form_id
+   KFKOBO_TOKEN=Token my_kobo_token
+   KFKOBO_DJANGO_LANG=en
+   
+   # Optional: If hosted under a subpath
+   NEXT_PUBLIC_BASE_PATH=/subpath
+   ```
+   Database connection details are configured in `src/lib/database.ts`.
 
-### Production Build
+3. **Development Server**:
+   ```bash
+   pnpm dev
+   ```
+   Access the application at `http://localhost:3000`
 
-1.  **Build the Application**:
-    ```bash
-    pnpm build
-    ```
-2.  **Start Production Server**:
-    ```bash
-    pnpm start
-    ```
-    This command starts the server on port `4000` as defined in `package.json`.
+### Build and Deployment
+- **Build**: `pnpm build`
+- **Production Server**: `pnpm start` (runs on port 4000)
+- **Linting**: `pnpm lint`
+- **Deployment**: Compatible with Vercel or self-hosted Next.js environments
 
-### Linting
+### Application Routes
+- **Main Dashboard**: `http://localhost:3000`
+- **Indoor Surveillance**: `http://localhost:3000/indoor-surveillance`
+- **Outdoor Surveillance**: `http://localhost:3000/outdoor-surveillance`
+- **Maps Dashboard**: `http://localhost:3000/maps`
+- **Supervision Dashboard**: `http://localhost:3000/supervision-dashboard/details`
 
-Run the linter with:
-```bash
-pnpm lint
+## Project Structure and Development Conventions
+
+### Directory Organization
+The project follows Next.js 15 App Router structure:
+
+```
+src/
+├── app/                    # Next.js App Router pages and API routes
+│   ├── api/                # Server-side API endpoints
+│   │   ├── indoor-surveillance/
+│   │   ├── outdoor-surveillance/
+│   │   ├── maps/           # Maps data, filter-options, uc-centroids, etc.
+│   │   └── supervision/
+│   ├── indoor-surveillance/
+│   ├── outdoor-surveillance/
+│   ├── maps/
+│   └── supervision-dashboard/
+├── components/            # Reusable UI components
+│   ├── maps/              # Map-specific components
+│   ├── supervision/       # Supervision dashboard components
+│   └── ui/                # Generic UI components
+├── lib/                   # Database queries and utilities
+├── services/              # API service layer
+├── types/                 # TypeScript type definitions
+└── utils/                 # Helper functions and constants
 ```
 
-## Development Conventions
+### Development Standards
 
-- **Architecture**: Follows the Next.js 15 App Router structure with `src/app` for routes, `src/components` for UI components, `src/types` for TypeScript definitions, `src/utils` for helper functions, and `src/lib` for database queries and API integrations.
-- **Data Fetching**:
-  - Server-only routes (`src/app/api/*`) are used for external API calls (like KoboToolbox) and database queries to protect sensitive data and encapsulate business logic.
-  - Pages use `fetch` with appropriate caching strategies (`cache: 'no-store'` for dynamic data) to ensure fresh data is displayed when needed.
-- **Type Safety**: Strong emphasis on TypeScript types for all data structures, API responses, and component props.
-- **UI Components**: Built with React and Tailwind CSS for a responsive and styled interface. Components are modular and reusable.
-- **Utilities**: Parsing, data analysis, and utility functions are encapsulated in `src/utils/`. Database queries are in `src/lib/`.
-- **Performance**: The indoor surveillance page implements local filtering and memoization to optimize performance. The maps dashboard uses caching for API responses.
+#### Data Fetching Strategy
+- **Server-side Routes**: Use `src/app/api/*` for database queries and external API calls
+- **Security**: Sensitive operations (KoboToolbox authentication) remain server-only
+- **Caching**: Use `cache: 'no-store'` for dynamic data, implement strategic caching for performance
+- **Filtering**: Optimize with local filtering for UI interactions, server filtering for data-heavy operations
+
+#### Code Organization
+- **Type Safety**: Strong TypeScript typing for all data structures and API responses
+- **Component Design**: Modular, reusable components with clear separation of concerns
+- **Performance**: Local filtering and memoization for optimal user experience
+- **Backward Compatibility**: Maintain legacy field support while introducing new features
+
+#### Database Integration
+- **Parameterized Queries**: Use `$${paramIndex}` syntax for PostgreSQL queries
+- **Smart Filtering**: Implement EXISTS subqueries for efficient UC-based filtering
+- **Employee Integration**: Support dual username matching (username/new_username)
+- **Coordinate Handling**: All tables contain proper latitude/longitude columns
+
+## Advanced Features and Specializations
+
+### Surveillance System Integration
+
+Both indoor and outdoor surveillance systems share core functionality while maintaining distinct operational focuses:
+
+#### Common Features
+- **Filtering Capabilities**: Date, town, and union council (UC) selection with cascading dropdowns
+- **Field Worker Performance**: Interactive cards showing individual worker statistics and contact information
+- **Map Visualization**: Dynamic map views with activity location plotting
+- **Summary Statistics**: Real-time calculation of houses/containers checked and positive results
+- **Employee Integration**: Enhanced user information display with formatted names and contact details
+
+#### Indoor Surveillance Specifics
+- **Data Source**: `report_type = 'indoor'` filtering from `dts_surv_activities` table
+- **Target Focus**: General indoor surveillance activities
+- **Branding**: Blue theme with 🦟 mosquito icon
+- **API Endpoint**: `/api/indoor-surveillance`
+
+#### Outdoor Surveillance Specifics
+- **Data Source**: `report_type = 'outdoor'` filtering from `dts_surv_activities` table
+- **Target Focus**: Activities performed by male staff in outdoor environments
+- **Branding**: Orange theme with 🌿 plant icon
+- **API Endpoint**: `/api/outdoor-surveillance`
+
+### Maps Dashboard Advanced Capabilities
+
+The comprehensive maps dashboard provides sophisticated visualization tools:
+
+#### Multi-Layer Visualization
+- **6 Activity Types**: Dengue simple activities, patient activities, surveillance activities, container data, case response activities, and TPV activities
+- **Layer Management**: Independent enable/disable controls for each data layer
+- **Custom Styling**: Configurable colors, clustering options, and display modes
+- **UC Selection**: Multi-select Union Council filtering for targeted analysis
+
+#### Patient Activity Specialization
+- **Circle Visualization**: 500m diameter circles for `tag_name = 'Patient'` activities
+- **Location-Based Coloring**:
+  - Red: `patient_place = 'residence'`
+  - Blue: `patient_place = 'workplace'`
+  - Purple: `patient_place = 'permanent'`
+  - Gray: Unknown/empty values
+- **Visual Enhancements**: Black borders, semi-transparent fills, non-clustered display
+- **Interactive Features**: Detailed popups with patient place information
+
+#### Performance Optimizations
+- **Data Caching**: Strategic caching for map data to reduce server load
+- **Smart Filtering**: Database-level filtering with EXISTS subqueries
+- **Local Processing**: Client-side filtering for UI interactions
+- **Efficient Rendering**: Optimized marker clustering and layer management
+
+### Supervision Dashboard Integration
+
+The supervision system provides comprehensive field team oversight:
+
+#### KoboToolbox Integration
+- **Secure Authentication**: Server-side token handling with environment variable protection
+- **Data Analysis**: Automated assessment of team performance and supervisory quality
+- **Grading System**: A-F grade assignment with risk flag identification
+- **Fallback Mechanism**: Local sample data for development and testing
+
+#### Performance Assessment
+- **Team Evaluation**: Comprehensive analysis of submission quality and completeness
+- **Supervisory Quality**: Assessment of supervision effectiveness and coverage
+- **Risk Identification**: Automated flagging of potential issues or anomalies
+- **Attachment Support**: Full support for viewing and analyzing submitted attachments

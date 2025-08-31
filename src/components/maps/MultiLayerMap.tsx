@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { Maximize, Minimize } from "lucide-react";
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
+  Circle,
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
@@ -62,7 +64,7 @@ function createColoredIcon(color: string): L.Icon {
 function createCircleIcon(color: string): L.Icon {
   const svgIcon = `
     <svg width="12" height="12" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="6" cy="6" r="5" fill="${color}" stroke="#fff" stroke-width="1"/>
+      <circle cx="6" cy="6" r="5" fill="${color}" stroke="#000" stroke-width="1"/>
     </svg>
   `;
 
@@ -77,23 +79,60 @@ function createCircleIcon(color: string): L.Icon {
 // Create dot marker for dot display mode
 function createDotIcon(color: string): L.Icon {
   const svgIcon = `
-    <svg width="8" height="8" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="4" cy="4" r="3" fill="${color}" stroke="#fff" stroke-width="1"/>
+    <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="8" cy="8" r="6" fill="${color}" stroke="#000" stroke-width="2"/>
     </svg>
   `;
 
   return new L.Icon({
     iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
-    iconSize: [8, 8],
-    iconAnchor: [4, 4],
-    popupAnchor: [0, -4],
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+    popupAnchor: [0, -8],
   });
 }
 
+// Create large circle marker for Patient Activities with 500m diameter
+function createPatientCircleIcon(color: string): L.Icon {
+  const svgIcon = `
+    <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="${color}" fill-opacity="0.3" stroke="#000" stroke-width="2"/>
+      <circle cx="12" cy="12" r="3" fill="${color}" stroke="#000" stroke-width="1"/>
+    </svg>
+  `;
+
+  return new L.Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(svgIcon)}`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12],
+  });
+}
+
+// Get color based on patient_place for Patient Activities
+function getPatientPlaceColor(patientPlace: string): string {
+  switch (patientPlace?.toLowerCase()) {
+    case 'residence':
+      return '#FF0000'; // Red
+    case 'workplace':
+      return '#0000FF'; // Blue
+    case 'permanent':
+      return '#800080'; // Purple
+    default:
+      return '#808080'; // Gray for unknown/empty values
+  }
+}
+
 // Get appropriate icon based on table type and display mode
-function getMarkerIcon(tableType: TableName, color: string, showAsDots: boolean = false): L.Icon {
+function getMarkerIcon(tableType: TableName, color: string, showAsDots: boolean = false, marker?: MapMarker): L.Icon {
   if (showAsDots) {
     return createDotIcon(color);
+  }
+  
+  // Special handling for Patient Activities with tag_name = 'Patient'
+  if (tableType === TableName.DTS_PATIENT_ACTIVITIES && marker?.popupData?.tag_name === 'Patient') {
+    const patientPlaceColor = getPatientPlaceColor(marker.popupData.patient_place as string);
+    return createPatientCircleIcon(patientPlaceColor);
   }
   
   if (tableType === TableName.DTS_SURV_ACTIVITIES) {
@@ -159,6 +198,8 @@ function formatPopupContent(marker: MapMarker): string {
         content += `<div><strong>Tag:</strong> ${popupData.tag_name}</div>`;
       if (popupData.category_name)
         content += `<div><strong>Category:</strong> ${popupData.category_name}</div>`;
+      if (popupData.patient_place)
+        content += `<div><strong>Patient Place:</strong> ${popupData.patient_place}</div>`;
       break;
 
     case TableName.DTS_SURV_ACTIVITIES:
@@ -238,8 +279,14 @@ function ClusterLayerRenderer({
 
     // Add markers to cluster group
     markers.forEach((marker) => {
+      // Special handling for Patient Activities with tag_name = 'Patient' - don't cluster these
+      if (marker.tableType === TableName.DTS_PATIENT_ACTIVITIES && marker.popupData?.tag_name === 'Patient') {
+        // These will be handled separately in the main render function
+        return;
+      }
+      
       const leafletMarker = L.marker([marker.latitude, marker.longitude], {
-        icon: getMarkerIcon(marker.tableType, marker.color, showAsDots),
+        icon: getMarkerIcon(marker.tableType, marker.color, showAsDots, marker),
       });
 
       leafletMarker.bindPopup(formatPopupContent(marker));
@@ -276,32 +323,71 @@ function LayerRenderer({
         const shouldCluster = layerSettings[layerId]?.showAsClusters || false;
         const showAsDots = layerSettings[layerId]?.showAsDots || false;
 
-        if (shouldCluster) {
-          return (
-            <ClusterLayerRenderer
-              key={layerId}
-              markers={layerMarkers}
-              color={layerColor}
-              showAsDots={showAsDots}
-            />
-          );
-        } else {
-          return layerMarkers.map((marker) => (
-            <Marker
-              key={marker.id}
-              position={[marker.latitude, marker.longitude]}
-              icon={getMarkerIcon(marker.tableType, marker.color, showAsDots)}
-            >
-              <Popup>
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: formatPopupContent(marker),
+        // Separate Patient Activities with tag_name = 'Patient' for special handling
+        const patientCircleMarkers = layerMarkers.filter(
+          (marker) => marker.tableType === TableName.DTS_PATIENT_ACTIVITIES && marker.popupData?.tag_name === 'Patient'
+        );
+        const regularMarkers = layerMarkers.filter(
+          (marker) => !(marker.tableType === TableName.DTS_PATIENT_ACTIVITIES && marker.popupData?.tag_name === 'Patient')
+        );
+
+        return (
+          <div key={layerId}>
+            {/* Render Patient Circle Markers separately */}
+            {patientCircleMarkers.map((marker) => {
+              const patientPlaceColor = getPatientPlaceColor(marker.popupData.patient_place as string);
+              return (
+                <Circle
+                  key={`patient-${marker.id}`}
+                  center={[marker.latitude, marker.longitude]}
+                  radius={500}
+                  pathOptions={{
+                    color: '#000',
+                    fillColor: patientPlaceColor,
+                    fillOpacity: 0.2,
+                    weight: 2,
                   }}
+                >
+                  <Popup>
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: formatPopupContent(marker),
+                      }}
+                    />
+                  </Popup>
+                </Circle>
+              );
+            })}
+
+            {/* Render regular markers */}
+            {regularMarkers.length > 0 && (
+              shouldCluster ? (
+                <ClusterLayerRenderer
+                  key={`cluster-${layerId}`}
+                  markers={regularMarkers}
+                  color={layerColor}
+                  showAsDots={showAsDots}
                 />
-              </Popup>
-            </Marker>
-          ));
-        }
+              ) : (
+                regularMarkers.map((marker) => (
+                  <Marker
+                    key={marker.id}
+                    position={[marker.latitude, marker.longitude]}
+                    icon={getMarkerIcon(marker.tableType, marker.color, showAsDots, marker)}
+                  >
+                    <Popup>
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: formatPopupContent(marker),
+                        }}
+                      />
+                    </Popup>
+                  </Marker>
+                ))
+              )
+            )}
+          </div>
+        );
       })}
     </>
   );
@@ -318,10 +404,15 @@ export default function MultiLayerMap({
   title = "Multi-Layer Activity Map",
 }: MultiLayerMapProps) {
   const [isClient, setIsClient] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen);
+  };
 
   if (!isClient) {
     return (
@@ -346,13 +437,36 @@ export default function MultiLayerMap({
   }, {} as Record<string, MapMarker[]>);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className={`flex flex-col ${
+      isFullScreen 
+        ? 'fixed inset-0 z-[9999] bg-white' 
+        : 'h-full'
+    }`}>
       {/* Map Header */}
       <div className="p-4 bg-white border-b border-gray-200">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <div className="text-sm text-gray-600">
-            {visibleMarkers.length} markers visible
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-600">
+              {visibleMarkers.length} markers visible
+            </div>
+            <button
+              onClick={toggleFullScreen}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 shadow-sm transition-colors"
+              title={isFullScreen ? 'Exit Full Screen' : 'Enter Full Screen'}
+            >
+              {isFullScreen ? (
+                <>
+                  <Minimize className="w-4 h-4" />
+                  <span>Exit Full Screen</span>
+                </>
+              ) : (
+                <>
+                  <Maximize className="w-4 h-4" />
+                  <span>Full Screen</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -405,19 +519,6 @@ export default function MultiLayerMap({
             layerSettings={layerSettings}
           />
         </MapContainer>
-
-        {/* Zoom to Fit Button */}
-        {visibleMarkers.length > 0 && (
-          <button
-            onClick={() => {
-              // This would need to be implemented with a ref to the map
-              console.log("Zoom to fit all markers");
-            }}
-            className="absolute top-4 right-4 z-[1000] bg-white border border-gray-300 rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm"
-          >
-            Zoom to Fit
-          </button>
-        )}
       </div>
     </div>
   );
