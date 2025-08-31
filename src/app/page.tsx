@@ -103,6 +103,37 @@ export default function HomePage() {
             </div>
           </Link>
 
+          {/* Employee Performance Card */}
+          <Link href="/employee-performance" className="group">
+            <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1">
+              <div className="w-16 h-16 bg-teal-100 rounded-lg flex items-center justify-center mb-6">
+                <span className="text-3xl">👨‍💼</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+                Employee Performance
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Track individual employee activities and performance metrics with GitHub-style contribution graphs and detailed analytics.
+              </p>
+              <div className="flex items-center text-teal-600 font-medium">
+                <span>View Analytics</span>
+                <svg
+                  className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </Link>
+
           {/* Supervision Dashboard Card */}
           <Link href="/supervision-dashboard" className="group">
             <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1">

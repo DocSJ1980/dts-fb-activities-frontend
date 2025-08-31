@@ -51,6 +51,21 @@ This is a Next.js 15 application designed to serve as a frontend for visualizing
     - Uses a server-side API route (`/api/maps/data`) to fetch map marker data based on selected filters.
     - Implements caching for map data to improve performance.
 
+5.  **Employee Performance Analytics** (`/employee-performance`)
+    - Provides comprehensive individual employee performance tracking and analytics for dengue field activities.
+    - Features employee search and selection with intelligent dropdown functionality.
+    - **GitHub-style Contribution Grid**: Visual heatmap showing daily activity counts over time with color-coded intensity.
+    - **Activity Summary Cards**: Interactive cards displaying counts for each activity type (surveillance, patient, case response, simple, TPV, larva detected).
+    - **Interactive Map Visualization**: Dynamic map showing employee activity locations with activity type filtering.
+    - **Complete Activity Feed**: Chronological list of all employee activities with detailed information cards.
+    - **Advanced Filtering**: Date range selection (default 30 days), activity type filtering, and real-time data updates.
+    - **Mobile Responsive Design**: Adaptive layout with tab navigation for mobile devices while maintaining full visibility on all screen sizes.
+    - **Activity Type Customization**: Specialized display handling for case response activities (shown as "Larva Response" in tags).
+    - **Data Integration**: Aggregates data from all activity tables (surveillance, patient, case response, simple dengue, TPV activities).
+    - **Performance Metrics**: Real-time calculation of activity counts, success rates, and performance trends.
+    - Uses a dedicated server-side API route (`/api/employee-performance`) to fetch comprehensive employee data.
+    - Implements efficient data loading with support for large datasets (up to 2000 activities per request).
+
 ## Architecture and Technical Implementation
 
 ### Technology Stack
@@ -74,6 +89,9 @@ The application integrates with several key database tables:
 - **`dts_surv_activities`**: Core surveillance activities table with `activity_id` foreign key
 - **`dts_containers`**: Container data linked via `activity_id`
 - **`dts_patient_activities`**: Patient activity records with location and place information
+- **`dengue_simple_activities`**: Simple dengue prevention activities
+- **`dts_case_response_activities`**: Case response and investigation activities
+- **`dts_tpv_activities`**: Third-party verification activities
 - **`employee_data`**: Staff information with dual username matching support
 - **`town_data` and `uc_data`**: Geographic hierarchy with foreign key relationships
 
@@ -142,6 +160,7 @@ The application integrates with several key database tables:
 - **Main Dashboard**: `http://localhost:3000`
 - **Indoor Surveillance**: `http://localhost:3000/indoor-surveillance`
 - **Outdoor Surveillance**: `http://localhost:3000/outdoor-surveillance`
+- **Employee Performance**: `http://localhost:3000/employee-performance`
 - **Maps Dashboard**: `http://localhost:3000/maps`
 - **Supervision Dashboard**: `http://localhost:3000/supervision-dashboard/details`
 
@@ -156,10 +175,12 @@ src/
 │   ├── api/                # Server-side API endpoints
 │   │   ├── indoor-surveillance/
 │   │   ├── outdoor-surveillance/
+│   │   ├── employee-performance/
 │   │   ├── maps/           # Maps data, filter-options, uc-centroids, etc.
 │   │   └── supervision/
 │   ├── indoor-surveillance/
 │   ├── outdoor-surveillance/
+│   ├── employee-performance/
 │   ├── maps/
 │   └── supervision-dashboard/
 ├── components/            # Reusable UI components
@@ -260,3 +281,47 @@ The supervision system provides comprehensive field team oversight:
 - **Supervisory Quality**: Assessment of supervision effectiveness and coverage
 - **Risk Identification**: Automated flagging of potential issues or anomalies
 - **Attachment Support**: Full support for viewing and analyzing submitted attachments
+
+### Employee Performance Analytics System
+
+The employee performance module provides comprehensive individual-level analytics and performance tracking:
+
+#### Core Analytics Features
+- **Individual Employee Tracking**: Detailed performance analysis for specific field workers across all activity types
+- **Multi-Activity Integration**: Consolidates data from surveillance, patient, case response, simple dengue, and TPV activities
+- **GitHub-style Contribution Grid**: Annual activity heatmap visualization showing daily activity patterns with intensity-based color coding
+- **Activity Summary Dashboard**: Interactive cards showing activity type counts with click-to-filter functionality
+- **Comprehensive Activity Feed**: Chronological timeline of all employee activities with detailed information display
+- **Interactive Map Visualization**: Geographic plotting of employee activities with activity type filtering
+
+#### Advanced Filtering and Search
+- **Intelligent Employee Search**: Dropdown with real-time search across employee names and usernames
+- **Flexible Date Range Selection**: Customizable date filtering with 30-day default range
+- **Activity Type Filtering**: Real-time filtering by surveillance, patient, case response, simple, TPV, and larva detection activities
+- **Cross-Component Synchronization**: Filter changes instantly update all dashboard components (map, feed, summary cards)
+
+#### Data Processing and Performance
+- **Optimized Data Loading**: Efficient handling of large datasets with support for up to 2000 activities per request
+- **Smart Activity Aggregation**: Complex queries joining multiple activity tables with proper employee attribution
+- **Real-time Calculations**: Dynamic computation of activity counts, success rates, and performance metrics
+- **Larva Detection Analytics**: Special handling for surveillance activities with positive container findings
+- **TPV Performance Integration**: Specialized scoring for third-party verification activities
+
+#### Mobile-First Responsive Design
+- **Adaptive Layout**: Tab-based navigation for mobile with full desktop functionality
+- **Universal Visibility**: Activities feed visible by default on all screen sizes for immediate data access
+- **Touch-Optimized Interface**: Mobile-friendly interactions for filtering and navigation
+- **Responsive Grid System**: Contribution grid and summary cards adapt to screen size
+
+#### Activity Type Specialization
+- **Case Response Customization**: "Case Response Activities" displayed as "Larva Response" in tag contexts
+- **Activity Type Icons**: Consistent iconography across all activity types for visual identification
+- **Contextual Information Display**: Activity-specific data fields and metadata in feed cards
+- **Performance Metrics**: Activity type-specific success rate calculations and performance indicators
+
+#### Technical Implementation
+- **Dedicated API Route**: `/api/employee-performance` with comprehensive data aggregation
+- **Type-Safe Data Models**: Strong TypeScript typing for all employee performance data structures
+- **Component Architecture**: Modular design with reusable components for different analytics views
+- **Efficient State Management**: Optimized React state handling for complex filtering interactions
+- **Error Handling**: Comprehensive error states and fallback mechanisms for data loading failures
