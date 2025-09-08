@@ -40,6 +40,7 @@ import ContributionGrid from "@/components/ui/ContributionGrid";
 import ActivitySummaryCards from "@/components/ui/ActivitySummaryCards";
 import DynamicEmployeePerformanceMap from "@/components/ui/DynamicEmployeePerformanceMap";
 import EmployeeActivityFeed from "@/components/ui/EmployeeActivityFeed";
+import EmployeePerformanceTable from "@/components/ui/EmployeePerformanceTable";
 
 // Force dynamic rendering to avoid SSR issues
 export const dynamic = 'force-dynamic';
@@ -362,6 +363,11 @@ export default function EmployeePerformancePage() {
               <ActivitySummaryCards
                 activitySummary={performanceData.activity_summary}
                 onCardClick={handleActivityTypeClick}
+              />
+              
+              {/* Daily Activity Table */}
+              <EmployeePerformanceTable
+                activities={activities}
               />
             </div>
 

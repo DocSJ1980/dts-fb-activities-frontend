@@ -56,6 +56,7 @@ This is a Next.js 15 application designed to serve as a frontend for visualizing
     - Features employee search and selection with intelligent dropdown functionality.
     - **GitHub-style Contribution Grid**: Visual heatmap showing daily activity counts over time with color-coded intensity.
     - **Activity Summary Cards**: Interactive cards displaying counts for each activity type (surveillance, patient, case response, simple, TPV, larva detected).
+    - **Daily Activity Summary Table**: Tabular view showing activities grouped by date and Union Council with counts for each activity type.
     - **Interactive Map Visualization**: Dynamic map showing employee activity locations with activity type filtering.
     - **Complete Activity Feed**: Chronological list of all employee activities with detailed information cards.
     - **Advanced Filtering**: Date range selection (default 30 days), activity type filtering, and real-time data updates.
