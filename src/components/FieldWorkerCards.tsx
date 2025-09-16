@@ -3,26 +3,25 @@
 import { useMemo } from "react";
 import { SurveillanceActivity, User } from "@/types/surveillance";
 
-// Utility function to format user display name based on activity type
+// Utility function to format user display name
 const formatUserDisplayName = (user: User) => {
   const name = user.name || user.full_name || user.username;
   const fhName = user.fh_name;
-  const activityType = user.activity_type;
-  
+
   if (!fhName) {
     return name;
   }
-  
-  // Determine the separator based on activity type
-  const separator = activityType === "Outdoor Activity" ? "S/O" : "W/O D/O";
-  
+
+  // Use default separator since activity_type is no longer available
+  const separator = "W/O D/O";
+
   return `${name} ${separator} ${fhName}`;
 };
 
 // Utility function to get user contact info
 const getUserContactInfo = () => {
   // Contact info removed for privacy protection
-  return '';
+  return "";
 };
 
 interface ExtendedUser extends User {
@@ -51,16 +50,15 @@ export default function FieldWorkerCards({
     return users
       .map((user) => {
         // Handle both new and legacy user data structure
-        const username = user.username || user.username_prefix || user.full_name;
+        const username =
+          user.username || user.username_prefix || user.full_name;
         const displayName = formatUserDisplayName(user);
         const contactInfo = getUserContactInfo();
-        
-        const activityCount = activities.filter(
-          (activity) => {
-            const submittedBy = activity.submitted_by || activity.Submitted_by;
-            return submittedBy?.trim() === username;
-          }
-        ).length;
+
+        const activityCount = activities.filter((activity) => {
+          const submittedBy = activity.submitted_by || activity.Submitted_by;
+          return submittedBy?.trim() === username;
+        }).length;
 
         return {
           ...user,
@@ -70,7 +68,7 @@ export default function FieldWorkerCards({
           activityCount,
         } as ExtendedUser;
       })
-      .sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
+      .sort((a, b) => (a.displayName || "").localeCompare(b.displayName || ""));
   }, [users, activities]);
 
   if (loading) {
@@ -123,7 +121,7 @@ export default function FieldWorkerCards({
               onFieldWorkerSelect(
                 (user.username || user.username_prefix) === selectedFieldWorker
                   ? undefined
-                  : (user.username || user.username_prefix)
+                  : user.username || user.username_prefix
               )
             }
             className={`p-4 rounded-lg border-2 transition-all duration-200 text-left hover:shadow-md ${
@@ -136,7 +134,8 @@ export default function FieldWorkerCards({
               <div className="flex-1 min-w-0">
                 <p
                   className={`text-sm font-medium truncate ${
-                    selectedFieldWorker === (user.username || user.username_prefix)
+                    selectedFieldWorker ===
+                    (user.username || user.username_prefix)
                       ? "text-blue-900"
                       : "text-gray-900"
                   }`}
@@ -145,7 +144,8 @@ export default function FieldWorkerCards({
                 </p>
                 <p
                   className={`text-xs mt-1 truncate ${
-                    selectedFieldWorker === (user.username || user.username_prefix)
+                    selectedFieldWorker ===
+                    (user.username || user.username_prefix)
                       ? "text-blue-600"
                       : "text-gray-500"
                   }`}
@@ -155,7 +155,8 @@ export default function FieldWorkerCards({
                 {user.designation && (
                   <p
                     className={`text-xs mt-1 ${
-                      selectedFieldWorker === (user.username || user.username_prefix)
+                      selectedFieldWorker ===
+                      (user.username || user.username_prefix)
                         ? "text-blue-600"
                         : "text-gray-500"
                     }`}
@@ -166,12 +167,13 @@ export default function FieldWorkerCards({
               </div>
               <div
                 className={`ml-2 w-8 h-8 rounded-full hidden md:flex items-center justify-center text-xs font-bold ${
-                  selectedFieldWorker === (user.username || user.username_prefix)
+                  selectedFieldWorker ===
+                  (user.username || user.username_prefix)
                     ? "bg-blue-500 text-white"
                     : "bg-gray-100 text-gray-600"
                 }`}
               >
-                                {user.activityCount}
+                {user.activityCount}
               </div>
             </div>
           </button>

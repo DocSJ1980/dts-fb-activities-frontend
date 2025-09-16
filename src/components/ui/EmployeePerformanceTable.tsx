@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import { EmployeeActivity } from "@/types/employee-performance";
-import { surveillanceApi } from "@/services/api";
 
 interface EmployeePerformanceTableProps {
   activities: EmployeeActivity[];
@@ -27,37 +26,6 @@ export default function EmployeePerformanceTable({
     key: keyof AggregatedActivity;
     direction: "asc" | "desc";
   } | null>(null);
-
-  // Cache for UC name lookups
-  const ucNameCache = useMemo(() => new Map<string, string>(), []);
-
-  // Function to get the standardized UC name from the database
-  const getStandardizedUCName = async (ucName: string): Promise<string> => {
-    // Check cache first
-    if (ucNameCache.has(ucName)) {
-      return ucNameCache.get(ucName) || ucName;
-    }
-
-    try {
-      // Search for the UC in the database
-      const results = await surveillanceApi.searchUCs(ucName);
-      
-      // If we found a match, use it; otherwise keep the original
-      if (results.length > 0) {
-        const standardized = results[0].uc_name;
-        ucNameCache.set(ucName, standardized);
-        return standardized;
-      } else {
-        // No match found, keep original but cache it
-        ucNameCache.set(ucName, ucName);
-        return ucName;
-      }
-    } catch (error) {
-      console.error("Error searching for UC name:", error);
-      // On error, keep original name
-      return ucName;
-    }
-  };
 
   // Aggregate activities by date and UC
   const aggregatedData = useMemo(() => {
@@ -123,7 +91,11 @@ export default function EmployeePerformanceTable({
 
   const handleSort = (key: keyof AggregatedActivity) => {
     let direction: "asc" | "desc" = "asc";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
       direction = "desc";
     }
     setSortConfig({ key, direction });
@@ -169,7 +141,7 @@ export default function EmployeePerformanceTable({
           Activities grouped by date and Union Council
         </p>
       </div>
-      
+
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -198,7 +170,8 @@ export default function EmployeePerformanceTable({
                 onClick={() => handleSort("indoor_surveillance")}
               >
                 <div className="flex items-center">
-                  Indoor Vector Surveillance{getSortIndicator("indoor_surveillance")}
+                  Indoor Vector Surveillance
+                  {getSortIndicator("indoor_surveillance")}
                 </div>
               </th>
               <th
@@ -207,7 +180,8 @@ export default function EmployeePerformanceTable({
                 onClick={() => handleSort("outdoor_surveillance")}
               >
                 <div className="flex items-center">
-                  Outdoor Vector Surveillance{getSortIndicator("outdoor_surveillance")}
+                  Outdoor Vector Surveillance
+                  {getSortIndicator("outdoor_surveillance")}
                 </div>
               </th>
               <th
@@ -292,25 +266,45 @@ export default function EmployeePerformanceTable({
           </tbody>
           <tfoot className="bg-gray-50">
             <tr>
-              <td className="px-6 py-3 text-sm font-medium text-gray-900">Total</td>
+              <td className="px-6 py-3 text-sm font-medium text-gray-900">
+                Total
+              </td>
               <td className="px-6 py-3 text-sm text-gray-900"></td>
               <td className="px-6 py-3 text-sm font-medium text-gray-900">
-                {aggregatedData.reduce((sum, row) => sum + row.indoor_surveillance, 0)}
+                {aggregatedData.reduce(
+                  (sum, row) => sum + row.indoor_surveillance,
+                  0
+                )}
               </td>
               <td className="px-6 py-3 text-sm font-medium text-gray-900">
-                {aggregatedData.reduce((sum, row) => sum + row.outdoor_surveillance, 0)}
+                {aggregatedData.reduce(
+                  (sum, row) => sum + row.outdoor_surveillance,
+                  0
+                )}
               </td>
               <td className="px-6 py-3 text-sm font-medium text-gray-900">
-                {aggregatedData.reduce((sum, row) => sum + row.larva_response, 0)}
+                {aggregatedData.reduce(
+                  (sum, row) => sum + row.larva_response,
+                  0
+                )}
               </td>
               <td className="px-6 py-3 text-sm font-medium text-gray-900">
-                {aggregatedData.reduce((sum, row) => sum + row.patients_tagged, 0)}
+                {aggregatedData.reduce(
+                  (sum, row) => sum + row.patients_tagged,
+                  0
+                )}
               </td>
               <td className="px-6 py-3 text-sm font-medium text-gray-900">
-                {aggregatedData.reduce((sum, row) => sum + row.patients_irs_done, 0)}
+                {aggregatedData.reduce(
+                  (sum, row) => sum + row.patients_irs_done,
+                  0
+                )}
               </td>
               <td className="px-6 py-3 text-sm font-medium text-gray-900">
-                {aggregatedData.reduce((sum, row) => sum + row.simple_activities, 0)}
+                {aggregatedData.reduce(
+                  (sum, row) => sum + row.simple_activities,
+                  0
+                )}
               </td>
               <td className="px-6 py-3 text-sm font-medium text-gray-900">
                 {aggregatedData.reduce((sum, row) => sum + row.total, 0)}
@@ -319,7 +313,7 @@ export default function EmployeePerformanceTable({
           </tfoot>
         </table>
       </div>
-      
+
       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
         <p className="text-sm text-gray-600">
           Showing {aggregatedData.length} day-UC combinations
