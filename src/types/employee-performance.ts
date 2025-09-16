@@ -9,7 +9,6 @@ export interface Employee {
   personal_no?: string;
   designation?: string;
   contact_no?: string;
-  activity_type?: string;
   username: string;
   new_username?: string;
   town?: string;
@@ -34,7 +33,13 @@ export interface DailyActivityCount {
 }
 
 export interface ActivitySummary {
-  activity_type: 'surveillance' | 'simple' | 'patient' | 'case_response' | 'tpv' | 'larva_detected';
+  activity_type:
+    | "surveillance"
+    | "simple"
+    | "patient"
+    | "case_response"
+    | "tpv"
+    | "larva_detected";
   activity_label: string;
   total_count: number;
   icon: string;
@@ -45,7 +50,12 @@ export interface ActivitySummary {
 export interface EmployeeActivity {
   id: number;
   activity_id: string;
-  activity_type: 'surveillance' | 'simple' | 'patient' | 'case_response' | 'tpv';
+  activity_type:
+    | "surveillance"
+    | "simple"
+    | "patient"
+    | "case_response"
+    | "tpv";
   activity_datetime: string;
   district?: string;
   town?: string;

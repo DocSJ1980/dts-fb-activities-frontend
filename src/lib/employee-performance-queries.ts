@@ -38,13 +38,13 @@ export async function getContainerDataForActivities(
 
     // Group containers by activity_id
     const containersByActivity: { [activityId: string]: ContainerData[] } = {};
-    
+
     result.rows.forEach((row) => {
       const activityId = row.activity_id;
       if (!containersByActivity[activityId]) {
         containersByActivity[activityId] = [];
       }
-      
+
       containersByActivity[activityId].push({
         id: row.id,
         activity_id: row.activity_id,
@@ -65,16 +65,18 @@ export async function getContainerDataForActivities(
  * Check if an activity has positive containers (larva found)
  */
 export function hasLarvaFound(containers: ContainerData[]): boolean {
-  return containers.some(container => container.positive > 0);
+  return containers.some((container) => container.positive > 0);
 }
 
 /**
  * Search employees by name or username
  */
-export async function searchEmployees(searchTerm: string): Promise<EmployeeSearchResponse> {
+export async function searchEmployees(
+  searchTerm: string
+): Promise<EmployeeSearchResponse> {
   try {
     const query = `
-      SELECT 
+      SELECT
         id,
         name,
         fh_name,
@@ -82,7 +84,6 @@ export async function searchEmployees(searchTerm: string): Promise<EmployeeSearc
         personal_no,
         designation,
         contact_no,
-        activity_type,
         username,
         new_username,
         town,
@@ -107,7 +108,6 @@ export async function searchEmployees(searchTerm: string): Promise<EmployeeSearc
       personal_no: row.personal_no,
       designation: row.designation,
       contact_no: row.contact_no,
-      activity_type: row.activity_type,
       username: row.username || "",
       new_username: row.new_username,
       town: row.town,
@@ -127,10 +127,12 @@ export async function searchEmployees(searchTerm: string): Promise<EmployeeSearc
 /**
  * Get employee by ID
  */
-export async function getEmployeeById(employeeId: number): Promise<Employee | null> {
+export async function getEmployeeById(
+  employeeId: number
+): Promise<Employee | null> {
   try {
     const query = `
-      SELECT 
+      SELECT
         id,
         name,
         fh_name,
@@ -138,7 +140,6 @@ export async function getEmployeeById(employeeId: number): Promise<Employee | nu
         personal_no,
         designation,
         contact_no,
-        activity_type,
         username,
         new_username,
         town,
@@ -162,7 +163,6 @@ export async function getEmployeeById(employeeId: number): Promise<Employee | nu
       personal_no: row.personal_no,
       designation: row.designation,
       contact_no: row.contact_no,
-      activity_type: row.activity_type,
       username: row.username || "",
       new_username: row.new_username,
       town: row.town,
@@ -274,15 +274,17 @@ export async function getDailyActivityCounts(
       employee.new_username || employee.username, // Use username as fallback if new_username is null
     ]);
 
-    return result.rows.map((row): DailyActivityCount => ({
-      date: row.date,
-      total_activities: parseInt(row.total_activities) || 0,
-      surveillance_activities: parseInt(row.surveillance_activities) || 0,
-      simple_activities: parseInt(row.simple_activities) || 0,
-      patient_activities: parseInt(row.patient_activities) || 0,
-      case_response_activities: parseInt(row.case_response_activities) || 0,
-      tpv_activities: parseInt(row.tpv_activities) || 0,
-    }));
+    return result.rows.map(
+      (row): DailyActivityCount => ({
+        date: row.date,
+        total_activities: parseInt(row.total_activities) || 0,
+        surveillance_activities: parseInt(row.surveillance_activities) || 0,
+        simple_activities: parseInt(row.simple_activities) || 0,
+        patient_activities: parseInt(row.patient_activities) || 0,
+        case_response_activities: parseInt(row.case_response_activities) || 0,
+        tpv_activities: parseInt(row.tpv_activities) || 0,
+      })
+    );
   } catch (error) {
     console.error("Error getting daily activity counts:", error);
     throw error;
@@ -402,14 +404,23 @@ export async function getActivitySummary(
       employee.new_username || employee.username, // Use username as fallback if new_username is null
     ]);
 
-    return result.rows.map((row): ActivitySummary => ({
-      activity_type: row.activity_type as 'surveillance' | 'simple' | 'patient' | 'case_response' | 'tpv',
-      activity_label: row.activity_label,
-      total_count: parseInt(row.total_count) || 0,
-      icon: row.icon,
-      description: row.description,
-      average_score: row.average_score ? parseFloat(row.average_score) : undefined,
-    }));
+    return result.rows.map(
+      (row): ActivitySummary => ({
+        activity_type: row.activity_type as
+          | "surveillance"
+          | "simple"
+          | "patient"
+          | "case_response"
+          | "tpv",
+        activity_label: row.activity_label,
+        total_count: parseInt(row.total_count) || 0,
+        icon: row.icon,
+        description: row.description,
+        average_score: row.average_score
+          ? parseFloat(row.average_score)
+          : undefined,
+      })
+    );
   } catch (error) {
     console.error("Error getting activity summary:", error);
     throw error;
@@ -431,7 +442,7 @@ export async function getEmployeeActivities(
     }
 
     const offset = (page - 1) * limit;
-    
+
     const userCondition = `
       (submitted_by = $3 OR submitted_by = $4)
     `;
@@ -671,51 +682,55 @@ export async function getEmployeeActivities(
       ]),
     ]);
 
-    const activities: EmployeeActivity[] = activitiesResult.rows.map((row): EmployeeActivity => ({
-      id: row.id,
-      activity_id: row.activity_id || "",
-      activity_type: row.activity_type,
-      activity_datetime: row.activity_datetime?.toISOString() || "",
-      district: row.district,
-      town: row.town,
-      uc: row.uc,
-      latitude: row.latitude ? parseFloat(row.latitude) : undefined,
-      longitude: row.longitude ? parseFloat(row.longitude) : undefined,
-      picture_url: row.picture_url,
-      name_of_family_head: row.name_of_family_head,
-      shop_house: row.shop_house,
-      address: row.address,
-      locality: row.locality,
-      report_type: row.report_type,
-      patient_name: row.patient_name,
-      tag_name: row.tag_name,
-      patient_place: row.patient_place,
-      category_name: row.category_name,
-      name_address: row.name_address,
-      dengue_larvae: row.dengue_larvae,
-      tag: row.tag,
-      larva_source: row.larva_source,
-      case_response_id: row.case_response_id,
-      tpv_type: row.tpv_type,
-      auditor: row.auditor,
-      auditee: row.auditee,
-      tpv_score: row.tpv_score,
-    }));
+    const activities: EmployeeActivity[] = activitiesResult.rows.map(
+      (row): EmployeeActivity => ({
+        id: row.id,
+        activity_id: row.activity_id || "",
+        activity_type: row.activity_type,
+        activity_datetime: row.activity_datetime?.toISOString() || "",
+        district: row.district,
+        town: row.town,
+        uc: row.uc,
+        latitude: row.latitude ? parseFloat(row.latitude) : undefined,
+        longitude: row.longitude ? parseFloat(row.longitude) : undefined,
+        picture_url: row.picture_url,
+        name_of_family_head: row.name_of_family_head,
+        shop_house: row.shop_house,
+        address: row.address,
+        locality: row.locality,
+        report_type: row.report_type,
+        patient_name: row.patient_name,
+        tag_name: row.tag_name,
+        patient_place: row.patient_place,
+        category_name: row.category_name,
+        name_address: row.name_address,
+        dengue_larvae: row.dengue_larvae,
+        tag: row.tag,
+        larva_source: row.larva_source,
+        case_response_id: row.case_response_id,
+        tpv_type: row.tpv_type,
+        auditor: row.auditor,
+        auditee: row.auditee,
+        tpv_score: row.tpv_score,
+      })
+    );
 
     // Fetch container data for surveillance activities
     const surveillanceActivityIds = activities
-      .filter(activity => activity.activity_type === 'surveillance')
-      .map(activity => activity.activity_id)
+      .filter((activity) => activity.activity_type === "surveillance")
+      .map((activity) => activity.activity_id)
       .filter(Boolean);
 
     let containerDataByActivity: { [activityId: string]: ContainerData[] } = {};
     if (surveillanceActivityIds.length > 0) {
-      containerDataByActivity = await getContainerDataForActivities(surveillanceActivityIds);
+      containerDataByActivity = await getContainerDataForActivities(
+        surveillanceActivityIds
+      );
     }
 
     // Add container data and larva_found flag to surveillance activities
-    const activitiesWithContainers = activities.map(activity => {
-      if (activity.activity_type === 'surveillance' && activity.activity_id) {
+    const activitiesWithContainers = activities.map((activity) => {
+      if (activity.activity_type === "surveillance" && activity.activity_id) {
         const containers = containerDataByActivity[activity.activity_id] || [];
         return {
           ...activity,
@@ -774,11 +789,31 @@ export async function debugUserMatching(
 
     // Test each table individually
     const tables = [
-      { name: 'dts_surv_activities', condition: userCondition, dateField: 'activity_datetime' },
-      { name: 'dengue_simple_activities', condition: userCondition, dateField: 'activity_datetime' },
-      { name: 'dts_patient_activities', condition: userCondition, dateField: 'activity_submission_datetime' },
-      { name: 'dts_case_response_activities', condition: userCondition, dateField: 'submission_date' },
-      { name: 'dts_tpv_activities', condition: tpvUserCondition, dateField: 'tpv_activity_date_time' },
+      {
+        name: "dts_surv_activities",
+        condition: userCondition,
+        dateField: "activity_datetime",
+      },
+      {
+        name: "dengue_simple_activities",
+        condition: userCondition,
+        dateField: "activity_datetime",
+      },
+      {
+        name: "dts_patient_activities",
+        condition: userCondition,
+        dateField: "activity_submission_datetime",
+      },
+      {
+        name: "dts_case_response_activities",
+        condition: userCondition,
+        dateField: "submission_date",
+      },
+      {
+        name: "dts_tpv_activities",
+        condition: tpvUserCondition,
+        dateField: "tpv_activity_date_time",
+      },
     ];
 
     for (const table of tables) {

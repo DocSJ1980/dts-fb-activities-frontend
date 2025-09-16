@@ -178,6 +178,25 @@ export const surveillanceApi = {
     }
   },
 
+  // Search for UCs by name
+  searchUCs: async (searchTerm: string): Promise<UC[]> => {
+    try {
+      const response = await api.get(`?endpoint=search-uc&search=${encodeURIComponent(searchTerm)}`);
+      return response.data;
+    } catch (error: unknown) {
+      const err = error as Error & {
+        response?: { status?: number; data?: unknown };
+      };
+      console.error("Error searching UCs:", {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+      // Return empty array if API fails
+      return [];
+    }
+  },
+
   // Get surveillance data with filters
   getSurveillanceData: async (
     filters: SurveillanceFilters

@@ -3,6 +3,7 @@ import {
   getSurveillanceData,
   getTowns,
   getUCs,
+  searchUCs
 } from "@/lib/surveillance-queries";
 import { SurveillanceFilters } from "@/types/surveillance";
 
@@ -25,9 +26,12 @@ export async function GET(request: NextRequest) {
       case "surveillance-data":
         return handleGetSurveillanceData(searchParams);
       
+      case "search-uc":
+        return handleSearchUC(searchParams);
+      
       default:
         return NextResponse.json(
-          { error: "Invalid endpoint. Use ?endpoint=towns, ?endpoint=ucs, or ?endpoint=surveillance-data" },
+          { error: "Invalid endpoint. Use ?endpoint=towns, ?endpoint=ucs, ?endpoint=surveillance-data, or ?endpoint=search-uc" },
           { status: 400 }
         );
     }
@@ -78,6 +82,28 @@ async function handleGetUCs(searchParams: URLSearchParams) {
     console.error("Error fetching UCs:", error);
     return NextResponse.json(
       { error: "Failed to fetch UCs" },
+      { status: 500 }
+    );
+  }
+}
+
+async function handleSearchUC(searchParams: URLSearchParams) {
+  try {
+    const searchTerm = searchParams.get("search");
+    
+    if (!searchTerm) {
+      return NextResponse.json(
+        { error: "search parameter is required" },
+        { status: 400 }
+      );
+    }
+
+    const ucs = await searchUCs(searchTerm);
+    return NextResponse.json(ucs);
+  } catch (error) {
+    console.error("Error searching UCs:", error);
+    return NextResponse.json(
+      { error: "Failed to search UCs" },
       { status: 500 }
     );
   }

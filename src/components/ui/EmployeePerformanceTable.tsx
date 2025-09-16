@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { EmployeeActivity } from "@/types/employee-performance";
+import { surveillanceApi } from "@/services/api";
 
 interface EmployeePerformanceTableProps {
   activities: EmployeeActivity[];
@@ -26,6 +27,37 @@ export default function EmployeePerformanceTable({
     key: keyof AggregatedActivity;
     direction: "asc" | "desc";
   } | null>(null);
+
+  // Cache for UC name lookups
+  const ucNameCache = useMemo(() => new Map<string, string>(), []);
+
+  // Function to get the standardized UC name from the database
+  const getStandardizedUCName = async (ucName: string): Promise<string> => {
+    // Check cache first
+    if (ucNameCache.has(ucName)) {
+      return ucNameCache.get(ucName) || ucName;
+    }
+
+    try {
+      // Search for the UC in the database
+      const results = await surveillanceApi.searchUCs(ucName);
+      
+      // If we found a match, use it; otherwise keep the original
+      if (results.length > 0) {
+        const standardized = results[0].uc_name;
+        ucNameCache.set(ucName, standardized);
+        return standardized;
+      } else {
+        // No match found, keep original but cache it
+        ucNameCache.set(ucName, ucName);
+        return ucName;
+      }
+    } catch (error) {
+      console.error("Error searching for UC name:", error);
+      // On error, keep original name
+      return ucName;
+    }
+  };
 
   // Aggregate activities by date and UC
   const aggregatedData = useMemo(() => {

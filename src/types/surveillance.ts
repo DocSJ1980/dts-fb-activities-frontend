@@ -66,7 +66,6 @@ export interface User {
   personal_no?: string;
   designation?: string;
   // contact_no removed for privacy protection
-  activity_type?: string;
   new_username?: string;
   town?: string;
   town_id?: number;
